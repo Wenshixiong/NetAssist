@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - 首页{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 mb-2 transition-all duration-300 hover:shadow-lg">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">欢迎使用网络运维工具</h1>
+    <p class="text-gray-600">
+        这是首页，您可以通过左侧导航栏或下方模块链接快速访问各个功能模块。
+    </p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+    {% for card in feature_cards %}
+    <div class="bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg">
+        <div class="flex items-center mb-4">
+            <div class="w-12 h-12 {{ card.bg_color }} rounded-full flex items-center justify-center mr-4">
+                <i class="{{ card.icon }} {{ card.text_color }} text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">{{ card.title }}</h3>
+        </div>
+        <p class="text-gray-600 mb-4">{{ card.description }}</p>
+        <a href="{{ url_for(card.url) }}" 
+           {% if card.target %}target="{{ card.target }}"{% endif %}
+           class="{{ card.text_color }} hover:{{ card.text_color }}-800 font-medium flex items-center">
+            {{ card.url_text or '查看详情' }} <i class="fa fa-arrow-right ml-2"></i>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

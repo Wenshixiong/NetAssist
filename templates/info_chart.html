@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - 信息图表{% endblock %}
+
+{% block content %}
+<div id="body-main" class="content">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-2 transition-all duration-300 hover:shadow-lg">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">网络设备信息图表</h1>
+        <p class="text-gray-600">
+            主要用于查看网络设备的维保状态、EOS状态，以及及各分区数量占比分布情况。
+        </p>
+    </div>
+    <!-- 从右到左布局 -->
+    <div id="btn-area"
+        class="flex justify-end gap-2 bg-white rounded-lg shadow-md p-6 mb-2 transition-all duration-300 hover:shadow-lg">
+        <button id="export-eos-btn"
+            class=" bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
+            <i class="fa fa-download"></i> 导出EOS统计表格
+        </button>
+        <button id="export-service-btn"
+            class=" bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
+            <i class="fa fa-download"></i> 导出维保统计表格
+        </button>
+        <button id="export-charts-btn"
+            class=" bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+            <i class="fa fa-download"></i> 导出成图片
+        </button>
+        <button id="refresh-btn"
+            class=" bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors">
+            <i class="fa fa-sync-alt "></i> 刷新所有数据
+        </button>
+
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-2">
+        <!-- 数据中心数量总览 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">不同数据中心华为设备总览</h2>
+                <div class="text-sm text-gray-500">共 <span id="dc-total-class">0</span> 个数据中心，共 <span
+                        id="dc-total-devices">0</span> 台设备</div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="data-center-chart" class="w-full h-full"></div>
+            </div>
+        </div>
+        <!-- 维保状态总览 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">华为设备维保状态总览</h2>
+                <div class="text-sm text-gray-500">共 <span id="service-total-devices">0</span> 台设备</div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="service-status-chart" class="w-full h-full"></div>
+            </div>
+        </div>
+        <!-- 不同厂商设备数量总览 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">不同厂商设备数量总览（关键分区）</h2>
+                <div class="text-sm text-gray-500">共 <span id="manufacturer-total-class">0</span> 个厂商，共 <span
+                        id="manufacturer-total-devices">0</span> 台设备</div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="manufacturer-chart" class="w-full h-full"></div>
+            </div>
+        </div>
+        <!-- 设备型号EOS状态总览 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">华为设备型号EOS状态总览</h2>
+                <div class="text-sm text-gray-500"> <span id="eos-total-devices">0</span> 台设备</div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="device-eos-chart" class="w-full h-full"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="grid grid-cols-1  gap-2 mb-2">
+
+        <!-- 设备型号分布柱状图 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center">
+                <div class="flex justify-start items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">设备型号分布</h2>
+                </div>
+                <div class="flex justify-end items-center mb-4">
+                    <!-- 父容器（保持relative，宽度控制） -->
+                    <div class="mr-4 relative w-64" id="modelSelectWrapper">
+                        <!-- 下拉触发按钮（宽度由父容器w-64控制） -->
+                        <div class="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:border-blue-500 transition-colors w-full" id="modelSelectTrigger">
+                            <span class="text-sm text-gray-700 truncate" id="selectedModelText">全部型号</span>
+                            <i class="fa fa-chevron-down ml-auto text-xs transition-transform duration-200" id="model-down-icon"></i>
+                        </div>
+
+                        <!-- 隐藏的多选列表（修复宽度+容器级滚动） -->
+                        <div 
+                            class="absolute top-full left-0 z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-md py-1 hidden max-h-[300px] overflow-y-auto" 
+                            id="modelSelectList" style="box-sizing: border-box;"
+                        >
+                            <!-- 全选选项 -->
+                            <div class="flex items-center px-4 py-2 text-sm cursor-pointer hover:bg-gray-100" id="selectAllModel">
+                                <input type="checkbox"  id="checkAllModel" class="mr-2 w-4 h-4 text-blue-500">
+                                <label for="checkAllModel" class="cursor-pointer">全部型号</label>
+                            </div>
+                            <!-- 动态渲染型号选项容器（JS 动态生成） -->
+                            <div id="model-checkbox-container" class="space-y-1">
+                                <div class="px-4 py-2 text-sm text-gray-400">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-sm text-gray-500">
+                         已选 
+                        <span id="model-total-class">0</span>
+                         种设备型号，共 
+                         <span id="model-total-devices">0</span> 
+                         台设备
+                    </div>
+                </div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="device-model-chart" class="w-full h-full"></div>
+            </div>
+            
+        </div>
+        <!-- 网络分区分布柱状图 -->
+        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg">
+            <div class="flex justify-between items-center">
+                <div class="flex justify-start items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">网络分区分布</h2>
+                </div>
+                <div class="flex justify-end items-center mb-4">
+                    <!-- 父容器（保持relative，宽度控制） -->
+                    <div class="mr-4 relative w-64" id="fenquSelectWrapper">
+                        <!-- 下拉触发按钮（宽度由父容器w-64控制） -->
+                        <div class="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:border-blue-500 transition-colors w-full" id="fenquSelectTrigger">
+                            <span class="text-sm text-gray-700 truncate" id="selectedFenquText">全部分区</span>
+                            <i class="fa fa-chevron-down ml-auto text-xs transition-transform duration-200" id="fenqu-down-icon"></i>
+                        </div>
+
+                        <!-- 隐藏的多选列表（修复宽度+容器级滚动） -->
+                        <div 
+                            class="absolute top-full left-0 z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-md py-1 hidden max-h-[300px] overflow-y-auto" 
+                            id="fenquSelectList" style="box-sizing: border-box;"
+                        >
+                            <!-- 全选选项 -->
+                            <div class="flex items-center px-4 py-2 text-sm cursor-pointer hover:bg-gray-100" id="selectAllFenqu">
+                                <input type="checkbox"  id="checkAllFenqu" class="mr-2 w-4 h-4 text-blue-500">
+                                <label for="checkAllFenqu" class="cursor-pointer">全部分区</label>
+                            </div>
+                            <!-- 动态渲染业务分区选项容器（JS 动态生成） -->
+                            <div id="fenqu-checkbox-container" class="space-y-1">
+                                <div class="px-4 py-2 text-sm text-gray-400">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-sm text-gray-500">
+                         已选 
+                        <span id="fenqu-total-class">0</span>
+                         种业务分区，共 
+                         <span id="fenqu-total-devices">0</span> 
+                         台设备
+                    </div>
+                </div>
+            </div>
+            <div class="h-80">
+                <!-- ECharts图表容器 -->
+                <div id="fenqu-chart" class="w-full h-full"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+{{ super() }}
+<!-- 信息图表 JS引入 -->
+<script src="/static/js/echarts.min.js"></script>
+<script src="/static/js/info_chart.js"></script>
+<script src="/static/js/html-to-image.min.js"></script>
+{% endblock %}

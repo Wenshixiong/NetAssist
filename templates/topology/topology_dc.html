@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}网络运维工具 - 总拓扑{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icons/NetAssist_64.png') }}" type="image/png">
+    <!-- tailwindcss样式库 -->
+    <link rel="stylesheet" href="/static/css/output.css">
+    <!-- 图标库 -->
+    <link rel="stylesheet" href="/static/fontawesome-free/css/all.min.css" />
+    <!--自定义提示框样式库 -->
+    <link rel="stylesheet" href="/static/css/topology_tooltips.css">
+    <!-- Cytoscape.js库 -->
+    <script src="/static/js/cytoscape.min_v3.js"></script>
+
+    <!-- 拓扑 JS引入 -->
+    <script src="/static/js/topology_dc.js"></script>
+
+
+
+
+</head>
+
+<body class="flex flex-col h-screen w-full overflow-hidden">
+    <div class="max-w-none mx-auto px-0 w-full">
+        <div class="bg-white rounded-lg shadow-md p-4 mb-2 transition-all duration-300 hover:shadow-lg">
+            <div class="grid grid-cols-2 items-center">
+                <h1 class="flex items-center text-2xl font-bold text-gray-800">网络运维工具 - 总拓扑</h1>
+                <div class="text-right">
+                    <a href="/">返回首页</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="max-w-none mx-auto px-0 flex-1 overflow-hidden w-full">
+        <!-- 拓扑图容器：占满剩余高度 -->
+        <div class="flex-grow h-full w-full">
+            <div class="grid grid-cols-[280px_1fr] gap-x-2 h-full max-w-full">
+                <!-- 左边栏 -->
+                <div
+                    class="h-full bg-white rounded-lg border border-gray-200 p-4  transition-all duration-300 hover:shadow-lg overflow-y-auto">
+                    <h2 class="text-lg font-semibold mb-3 text-dark">设备图例</h2>
+                    <!-- 设备类型颜色标注 -->
+                    <div id="device-legend" class=" mb-6 pb-4 border-b border-gray-200">
+                        <!-- 动态生成设备类型颜色标注 -->
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+                            <span>设备图例</span>
+                        </div>
+                    </div>
+
+                    <h2 class="text-lg font-semibold mb-3 text-dark">设备列表</h2>
+                    <div id="device-list" class="space-y-2">
+                        <!-- 设备列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 右边内容区：垂直布局 -->
+                <div class="flex flex-col h-full w-full overflow-hidden">
+
+                    <!-- 右边按钮区：固定高度 -->
+                    <div
+                        class="w-full bg-white rounded-lg border border-gray-200 p-4 h-16 transition-all duration-300 hover:shadow-lg flex items-center justify-between">
+
+                        <p id="node-coords" class="text-gray-700">未选中节点</p>
+                        <div class="flex gap-2">
+                            <button id="toggleGridBtn" 
+                                class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-bg">
+                                <span>显示网格</span>
+                            </button>
+                            <button id="lockLayoutBtn"
+                                class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-bg">
+                                <span>解锁布局</span>
+                            </button>
+                            <button id="exportPngBtn"
+                                class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-bg">
+                                <span>导出PNG</span>
+                            </button>
+                            <button id="save-topology"
+                                class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-bg">
+                                <span>保存拓扑</span>
+                            </button>
+                            <button id="refreshTopologyBtn"
+                                class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-bg">
+                                <span>刷新缓存</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 右边拓扑图区：撑满剩余高度 -->
+                    <div
+                        class="flex-1 bg-white rounded-lg border border-gray-200 p-4 overflow-hidden transition-all duration-300 hover:shadow-lg">
+                        <div id="cy" class=" h-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 添加提示框元素 -->
+        <div id="node-tooltip" class="node-tooltip"></div>
+    </div>
+
+</body>
+
+</html>

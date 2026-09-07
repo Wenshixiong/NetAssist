@@ -1,0 +1,2 @@
+EXCEL_FILENAME=设备维护清单_示例.xlsx
+LLDP_FILENAME=设备信息及互联表_示例.xlsx

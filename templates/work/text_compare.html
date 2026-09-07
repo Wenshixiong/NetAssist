@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}网络运维工具 - 文本对比工具{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icons/NetAssist_64.png') }}" type="image/png">
+    <!-- tailwindcss样式库 -->
+    <link rel="stylesheet" href="/static/css/output.css">
+    <!-- 图标库 -->
+    <link rel="stylesheet" href="/static/fontawesome-free/css/all.min.css" />
+    <script src="/static/js/diff.min.js"></script>
+</head>
+<body class="font-mono text-sm h-screen flex flex-col bg-white">
+
+    <!-- 顶部标题栏 -->
+    <div class="max-w-none mx-auto px-0 w-full">
+        <div class="bg-white rounded-lg shadow-md p-4 mb-2 transition-all duration-300 hover:shadow-lg">
+            <div class="grid grid-cols-2 items-center">
+                <h1 class="flex items-center text-2xl font-bold text-gray-800">网络运维工具 - 文本排序对比工具</h1>
+                <div class="text-right">
+                    <a href="/">返回首页</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="flex flex-wrap items-center gap-3 px-3 py-2 bg-white border-b border-gray-300">
+        <button onclick="doCompare()" class="px-4 py-1.5 bg-blue-600 text-white rounded border border-blue-700 hover:bg-blue-700 active:scale-95 transition font-mono text-sm flex items-center gap-1">
+            <i class="fa-solid fa-code-compare"></i> 原文对比
+        </button>
+        <button onclick="doSortCompare()" class="px-4 py-1.5 bg-orange-500 text-white rounded border border-orange-600 hover:bg-orange-600 active:scale-95 transition font-mono text-sm flex items-center gap-1">
+            <i class="fa-solid fa-arrow-down-short-wide"></i> 排序后对比
+        </button>
+        <button onclick="swapText()" class="px-4 py-1.5 bg-green-600 text-white rounded border border-green-700 hover:bg-green-700 active:scale-95 transition font-mono text-sm flex items-center gap-1">
+            <i class="fa-solid fa-exchange-alt"></i> 左右交换
+        </button>
+        <button onclick="clearAll()" class="px-4 py-1.5 bg-gray-200 text-gray-700 rounded border border-gray-300 hover:bg-gray-300 active:scale-95 transition font-mono text-sm flex items-center gap-1">
+            <i class="fa-solid fa-trash"></i> 清空内容
+        </button>
+        <span class="w-px h-5 bg-gray-400 mx-1"></span>
+        <label class="text-xs text-gray-700 flex items-center gap-1 cursor-pointer select-none">
+            <input type="checkbox" id="ignoreEmptyLines" checked> 忽略空行
+            <span class="text-[11px] bg-gray-600 text-white px-2 py-0.5 rounded-full ml-1" id="emptyBadge">开</span>
+        </label>
+        <label class="text-xs text-gray-700 flex items-center gap-1 cursor-pointer select-none">
+            <input type="checkbox" id="ignoreWhitespace"> 忽略首尾空格
+            <span class="text-[11px] bg-gray-600 text-white px-2 py-0.5 rounded-full ml-1" id="spaceBadge">关</span>
+        </label>
+        <span class="w-px h-5 bg-gray-400 mx-1"></span>
+        <span class="text-[11px] text-gray-600" id="anchorStatus"><i class="fa-solid fa-anchor text-amber-500 text-[11px]"></i> 锚点: 0</span>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="flex flex-wrap justify-between items-center px-3 py-1.5 bg-gray-50 border-b border-gray-300 text-xs">
+        <div class="font-bold transition-colors text-gray-500" id="statusText"><i class="fa-regular fa-lightbulb"></i> 等待对比…</div>
+        <div class="flex flex-wrap gap-3 text-gray-700">
+            <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 border border-gray-400 bg-red-100 inline-block"></span>差异</span>
+            <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 border border-gray-400 bg-blue-100 inline-block"></span>空格差异</span>
+            <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 border border-gray-400 bg-green-100 inline-block"></span>已忽略</span>
+            <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 border border-gray-400 bg-gray-100 inline-block"></span>占位行</span>
+            <span class="flex items-center gap-1"><i class="fa-solid fa-anchor text-amber-500"></i> 锚点</span>
+        </div>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="flex h-[170px] border-b border-gray-500 flex-shrink-0">
+        <!-- 左侧输入 -->
+        <div class="flex-1 flex flex-col relative pt-6 border-r border-gray-500 transition-colors" data-side="left" id="leftInputPanel">
+            <div class="absolute top-0 left-0 right-0 flex justify-between items-center px-2 py-1 bg-gray-100 border-b border-gray-300 text-xs font-bold text-gray-600">
+                左侧文本
+                <span class="font-normal text-gray-500 text-[11px]" id="leftCount">0 行</span>
+            </div>
+            <div class="flex flex-1 min-h-0">
+                <div class="w-[50px] bg-white border-r border-gray-300 text-right pr-2 text-gray-500 select-none overflow-y-hidden leading-[22px] text-sm" id="leftInputLineNum"></div>
+                <textarea id="leftInput" spellcheck="false" class="flex-1 w-full border-none outline-none resize-none px-2 font-mono text-sm leading-[22px] whitespace-pre overflow-auto bg-transparent"></textarea>
+            </div>
+        </div>
+        <!-- 右侧输入 -->
+        <div class="flex-1 flex flex-col relative pt-6" data-side="right" id="rightInputPanel">
+            <div class="absolute top-0 left-0 right-0 flex justify-between items-center px-2 py-1 bg-gray-100 border-b border-gray-300 text-xs font-bold text-gray-600">
+                右侧文本
+                <span class="font-normal text-gray-500 text-[11px]" id="rightCount">0 行</span>
+            </div>
+            <div class="flex flex-1 min-h-0">
+                <div class="w-[50px] bg-white border-r border-gray-300 text-right pr-2 text-gray-500 select-none overflow-y-hidden leading-[22px] text-sm" id="rightInputLineNum"></div>
+                <textarea id="rightInput" spellcheck="false" class="flex-1 w-full border-none outline-none resize-none px-2 font-mono text-sm leading-[22px] whitespace-pre overflow-auto bg-transparent"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 差异展示区域 -->
+    <div class="flex-1 flex overflow-hidden border-t border-gray-500 min-h-0">
+        <!-- 左侧结果 -->
+        <div class="flex-1 flex overflow-auto bg-white cursor-text border-r border-gray-500" id="leftPanel">
+            <div class="w-[50px] bg-white border-r border-gray-300 text-right pr-2 text-gray-500 select-none flex-shrink-0" id="leftLineNum"></div>
+            <div class="flex-1 min-w-0 relative" id="leftContent"></div>
+        </div>
+        <!-- 右侧结果 -->
+        <div class="flex-1 flex overflow-auto bg-white cursor-text" id="rightPanel">
+            <div class="w-[50px] bg-white border-r border-gray-300 text-right pr-2 text-gray-500 select-none flex-shrink-0" id="rightLineNum"></div>
+            <div class="flex-1 min-w-0 relative" id="rightContent"></div>
+        </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div id="contextMenu" class="fixed bg-white border border-gray-400 shadow-md z-50 min-w-[160px] text-xs hidden">
+        <div class="px-3 py-2 cursor-pointer hover:bg-blue-50" id="menuAlign">设置对齐锚点</div>
+        <div class="h-px bg-gray-200 my-1"></div>
+        <div class="px-3 py-2 cursor-pointer hover:bg-blue-50" id="menuClearAlign">清除所有对齐锚点</div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="fixed top-[70px] right-5 z-[9999] flex flex-col gap-2 max-w-[360px] pointer-events-none" id="toastContainer"></div>
+
+    <script>
+        // ================================================================
+        //  全局状态
+        // ================================================================
+        let anchors = [];
+        let pendingAnchor = null;
+        let currentContextLine = null;
+        let currentHighlightIndex = null;
+        let isResultSyncing = false;
+        let isInputSyncing = false;
+        let currentMode = 'original'; // 'original' 或 'sorted'
+
+        const leftPanel = document.getElementById('leftPanel');
+        const rightPanel = document.getElementById('rightPanel');
+        const contextMenu = document.getElementById('contextMenu');
+        const toastContainer = document.getElementById('toastContainer');
+
+        // ================================================================
+        //  Toast（无符号）
+        // ================================================================
+        function showToast(title, detail, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            let bgColor, borderColor;
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-green-50';
+                    borderColor = 'border-green-500';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-orange-50';
+                    borderColor = 'border-orange-500';
+                    break;
+                case 'danger':
+                    bgColor = 'bg-red-50';
+                    borderColor = 'border-red-500';
+                    break;
+                default:
+                    bgColor = 'bg-blue-50';
+                    borderColor = 'border-blue-500';
+                    break;
+            }
+            toast.className =
+                `toast ${bgColor} ${borderColor} border-l-4 shadow-lg rounded px-4 py-2.5 text-sm font-mono text-gray-800 opacity-0 translate-x-10 transition-all duration-300 ease-out pointer-events-auto`;
+            toast.innerHTML = `
+                <span class="font-bold mr-2">${title}</span>
+                <span class="text-gray-600 text-xs">${detail}</span>
+            `;
+            toastContainer.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', 'translate-x-10');
+                toast.classList.add('opacity-100', 'translate-x-0');
+            });
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-x-0');
+                toast.classList.add('opacity-0', 'translate-x-10');
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, 350);
+            }, duration);
+        }
+
+        // ================================================================
+        //  滚动同步 & 高亮
+        // ================================================================
+        function highlightRow(index) {
+            if (isNaN(index)) return;
+            // 移除所有行的高亮相关类
+            document.querySelectorAll('.line.highlight').forEach(el => {
+                el.classList.remove('highlight', 'outline', 'outline-2', 'outline-gray-400', 'relative', 'z-10');
+            });
+            // 为当前行添加高亮类
+            const leftLine = document.getElementById('leftContent').querySelector(`[data-row-index="${index}"]`);
+            const rightLine = document.getElementById('rightContent').querySelector(`[data-row-index="${index}"]`);
+            if (leftLine) {
+                leftLine.classList.add('highlight', 'outline', 'outline-2', 'outline-gray-400', 'relative', 'z-10');
+            }
+            if (rightLine) {
+                rightLine.classList.add('highlight', 'outline', 'outline-2', 'outline-gray-400', 'relative', 'z-10');
+            }
+            currentHighlightIndex = index;
+        }
+
+
+        function bindResultScrollSync() {
+            leftPanel.addEventListener('scroll', () => {
+                if (isResultSyncing) return;
+                isResultSyncing = true;
+                rightPanel.scrollTop = leftPanel.scrollTop;
+                rightPanel.scrollLeft = leftPanel.scrollLeft;
+                isResultSyncing = false;
+            });
+            rightPanel.addEventListener('scroll', () => {
+                if (isResultSyncing) return;
+                isResultSyncing = true;
+                leftPanel.scrollTop = rightPanel.scrollTop;
+                leftPanel.scrollLeft = rightPanel.scrollLeft;
+                isResultSyncing = false;
+            });
+        }
+
+        function bindInputScrollSync() {
+            const leftInput = document.getElementById('leftInput');
+            const rightInput = document.getElementById('rightInput');
+            const leftLineNum = document.getElementById('leftInputLineNum');
+            const rightLineNum = document.getElementById('rightInputLineNum');
+
+            function syncScroll(source, target, targetLineNum) {
+                if (isInputSyncing) return;
+                isInputSyncing = true;
+                target.scrollTop = source.scrollTop;
+                target.scrollLeft = source.scrollLeft;
+                targetLineNum.scrollTop = source.scrollTop;
+                isInputSyncing = false;
+            }
+
+            leftInput.addEventListener('scroll', () => {
+                syncScroll(leftInput, rightInput, leftLineNum);
+                rightLineNum.scrollTop = rightInput.scrollTop;
+            });
+            rightInput.addEventListener('scroll', () => {
+                syncScroll(rightInput, leftInput, rightLineNum);
+                leftLineNum.scrollTop = leftInput.scrollTop;
+            });
+        }
+
+        function bindRowHighlight() {
+            const leftContent = document.getElementById('leftContent');
+            const rightContent = document.getElementById('rightContent');
+
+            function handleClick(e) {
+                const lineEl = e.target.closest('.line');
+                if (!lineEl) return;
+                const index = parseInt(lineEl.dataset.rowIndex);
+                highlightRow(index);
+            }
+            leftContent.addEventListener('click', handleClick);
+            rightContent.addEventListener('click', handleClick);
+        }
+
+        // ================================================================
+        //  工具函数
+        // ================================================================
+        function splitLines(text) {
+            if (text === '') return [];
+            const lines = text.replace(/\r\n/g, '\n').split('\n');
+            if (lines.length > 0 && lines[lines.length - 1] === '' && text.endsWith('\n')) {
+                lines.pop();
+            }
+            return lines;
+        }
+
+        function updateInputLineNum(inputId, lineNumId, countId) {
+            const input = document.getElementById(inputId);
+            const lineNumEl = document.getElementById(lineNumId);
+            const countEl = document.getElementById(countId);
+            const lineCount = input.value === '' ? 1 : input.value.replace(/\r\n/g, '\n').split('\n').length;
+            let html = '';
+            for (let i = 1; i <= lineCount; i++) {
+                html += `<div class="h-[22px] leading-[22px] w-full">${i}</div>`;
+            }
+            lineNumEl.innerHTML = html;
+            lineNumEl.scrollTop = input.scrollTop;
+            if (countEl) countEl.textContent = `${lineCount} 行`;
+        }
+
+        function bindInputLineNum() {
+            const leftInput = document.getElementById('leftInput');
+            const rightInput = document.getElementById('rightInput');
+            leftInput.addEventListener('input', () =>
+                updateInputLineNum('leftInput', 'leftInputLineNum', 'leftCount')
+            );
+            rightInput.addEventListener('input', () =>
+                updateInputLineNum('rightInput', 'rightInputLineNum', 'rightCount')
+            );
+            updateInputLineNum('leftInput', 'leftInputLineNum', 'leftCount');
+            updateInputLineNum('rightInput', 'rightInputLineNum', 'rightCount');
+        }
+
+        function normalizeLine(line) {
+            const ignoreSpace = document.getElementById('ignoreWhitespace').checked;
+            return ignoreSpace ? line.trim() : line;
+        }
+
+        function isEmptyLine(line) {
+            return line.trim() === '';
+        }
+
+        function isTrimEqual(a, b) {
+            return a.trim() === b.trim();
+        }
+
+        function isAllWhitespaceEqual(a, b) {
+            return a.replace(/\s/g, '') === b.replace(/\s/g, '');
+        }
+
+        function isPendingAnchorLine(side, lineNum) {
+            if (!pendingAnchor) return false;
+            return pendingAnchor.side === side && pendingAnchor.lineNum === lineNum;
+        }
+
+        function isAnchorLine(side, lineNum) {
+            if (!lineNum) return false;
+            if (anchors.some(a => a[side] === lineNum)) return true;
+            if (pendingAnchor && pendingAnchor.side === side && pendingAnchor.lineNum === lineNum) return true;
+            return false;
+        }
+
+        function sortTextLines(text, ignoreSpace) {
+            const lines = splitLines(text);
+            if (ignoreSpace) {
+                lines.sort((a, b) => a.trim().localeCompare(b.trim()));
+            } else {
+                lines.sort((a, b) => a.localeCompare(b));
+            }
+            return lines.join('\n');
+        }
+
+        function filterEmptyLines(text) {
+            const ignoreEmpty = document.getElementById('ignoreEmptyLines').checked;
+            if (!ignoreEmpty) return text;
+            const lines = splitLines(text);
+            const filtered = lines.filter(line => !isEmptyLine(line));
+            return filtered.join('\n');
+        }
+
+        // ================================================================
+        //  核心：渲染差异（颜色映射：红-差异，蓝-空格差异，绿-忽略，灰-占位）
+        // ================================================================
+        function renderDiff(leftText, rightText) {
+            const leftLines = splitLines(leftText);
+            const rightLines = splitLines(rightText);
+
+            const validAnchors = anchors.filter(a =>
+                a.left >= 1 && a.left <= leftLines.length &&
+                a.right >= 1 && a.right <= rightLines.length
+            );
+
+            let fullDiff = [];
+            if (validAnchors.length > 0) {
+                let leftOffset = 0;
+                let rightOffset = 0;
+                validAnchors.forEach(anchor => {
+                    const leftSeg = leftLines.slice(leftOffset, anchor.left - 1);
+                    const rightSeg = rightLines.slice(rightOffset, anchor.right - 1);
+                    const segDiff = Diff.diffLines(leftSeg.join('\n'), rightSeg.join('\n'));
+                    fullDiff.push(...segDiff);
+                    fullDiff.push({ value: leftLines[anchor.left - 1] + '\n', removed: true });
+                    fullDiff.push({ value: rightLines[anchor.right - 1] + '\n', added: true });
+                    leftOffset = anchor.left;
+                    rightOffset = anchor.right;
+                });
+                const leftLast = leftLines.slice(leftOffset);
+                const rightLast = rightLines.slice(rightOffset);
+                const lastDiff = Diff.diffLines(leftLast.join('\n'), rightLast.join('\n'));
+                fullDiff.push(...lastDiff);
+            } else {
+                fullDiff = Diff.diffLines(leftText, rightText);
+            }
+
+            const mergedBlocks = [];
+            for (let i = 0; i < fullDiff.length; i++) {
+                const block = fullDiff[i];
+                if (block.removed && i + 1 < fullDiff.length && fullDiff[i + 1].added) {
+                    mergedBlocks.push({
+                        type: 'modify',
+                        leftLines: splitLines(block.value),
+                        rightLines: splitLines(fullDiff[i + 1].value)
+                    });
+                    i++;
+                } else if (block.added) {
+                    mergedBlocks.push({ type: 'insert', lines: splitLines(block.value) });
+                } else if (block.removed) {
+                    mergedBlocks.push({ type: 'delete', lines: splitLines(block.value) });
+                } else {
+                    mergedBlocks.push({ type: 'equal', lines: splitLines(block.value) });
+                }
+            }
+
+            const leftRows = [];
+            const rightRows = [];
+            let leftLineNum = 1;
+            let rightLineNum = 1;
+
+            mergedBlocks.forEach(block => {
+                if (block.type === 'equal') {
+                    block.lines.forEach(text => {
+                        leftRows.push({ type: 'equal', text, num: leftLineNum++, ignored: false });
+                        rightRows.push({ type: 'equal', text, num: rightLineNum++, ignored: false });
+                    });
+                } else if (block.type === 'delete') {
+                    block.lines.forEach(text => {
+                        leftRows.push({ type: 'delete', text, num: leftLineNum++, ignored: false });
+                        rightRows.push({ type: 'placeholder', text: '', num: null, ignored: false });
+                    });
+                } else if (block.type === 'insert') {
+                    block.lines.forEach(text => {
+                        leftRows.push({ type: 'placeholder', text: '', num: null, ignored: false });
+                        rightRows.push({ type: 'insert', text, num: rightLineNum++, ignored: false });
+                    });
+                } else if (block.type === 'modify') {
+                    const maxLen = Math.max(block.leftLines.length, block.rightLines.length);
+                    for (let i = 0; i < maxLen; i++) {
+                        const hasLeft = i < block.leftLines.length;
+                        const hasRight = i < block.rightLines.length;
+                        leftRows.push({
+                            type: hasLeft ? 'modify' : 'placeholder',
+                            text: hasLeft ? block.leftLines[i] : '',
+                            num: hasLeft ? leftLineNum++ : null,
+                            ignored: false
+                        });
+                        rightRows.push({
+                            type: hasRight ? 'modify' : 'placeholder',
+                            text: hasRight ? block.rightLines[i] : '',
+                            num: hasRight ? rightLineNum++ : null,
+                            ignored: false
+                        });
+                    }
+                }
+            });
+
+            // 统计
+            let deleteCount = 0,
+                insertCount = 0,
+                modifyCount = 0,
+                spaceDiffCount = 0,
+                ignoredCount = 0;
+
+            for (let i = 0; i < leftRows.length; i++) {
+                const left = leftRows[i];
+                const right = rightRows[i];
+                if (left.type === 'placeholder' && right.type !== 'placeholder') {
+                    insertCount++;
+                } else if (right.type === 'placeholder' && left.type !== 'placeholder') {
+                    deleteCount++;
+                } else if (left.type === 'modify' && right.type === 'modify') {
+                    if (left.text === right.text) {
+                        continue;
+                    }
+                    const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+                    if (ignoreWhitespace && isTrimEqual(left.text, right.text)) {
+                        ignoredCount++;
+                    } else if (isAllWhitespaceEqual(left.text, right.text)) {
+                        spaceDiffCount++;
+                    } else {
+                        modifyCount++;
+                    }
+                }
+            }
+
+            updateStatus(deleteCount, insertCount, modifyCount, spaceDiffCount, ignoredCount);
+
+            const leftNumEl = document.getElementById('leftLineNum');
+            const leftContentEl = document.getElementById('leftContent');
+            const rightNumEl = document.getElementById('rightLineNum');
+            const rightContentEl = document.getElementById('rightContent');
+
+            leftNumEl.innerHTML = '';
+            leftContentEl.innerHTML = '';
+            rightNumEl.innerHTML = '';
+            rightContentEl.innerHTML = '';
+
+            for (let i = 0; i < leftRows.length; i++) {
+                // 左侧行号
+                const leftNumDiv = document.createElement('div');
+                leftNumDiv.className = 'h-[22px] leading-[22px] w-full';
+                leftNumDiv.dataset.lineNum = leftRows[i].num || '';
+                if (isAnchorLine('left', leftRows[i].num)) {
+                    leftNumDiv.innerHTML = `<i class="fa-solid fa-anchor text-amber-500 text-[12px]"></i>${leftRows[i].num || ''}`;
+                } else {
+                    leftNumDiv.textContent = leftRows[i].num || '';
+                }
+                leftNumEl.appendChild(leftNumDiv);
+
+                // 右侧行号
+                const rightNumDiv = document.createElement('div');
+                rightNumDiv.className = 'h-[22px] leading-[22px] w-full';
+                rightNumDiv.dataset.lineNum = rightRows[i].num || '';
+                if (isAnchorLine('right', rightRows[i].num)) {
+                    rightNumDiv.innerHTML = `<i class="fa-solid fa-anchor text-amber-500 text-[12px]"></i>${rightRows[i].num || ''}`;
+                } else {
+                    rightNumDiv.textContent = rightRows[i].num || '';
+                }
+                rightNumEl.appendChild(rightNumDiv);
+
+                // 左侧内容行 - 加入 'line' 类
+                const leftLineDiv = document.createElement('div');
+                leftLineDiv.className = 'line h-[22px] leading-[22px] w-full cursor-pointer whitespace-pre box-border';
+                // 添加待配对黄色背景
+                if (isPendingAnchorLine('left', leftRows[i].num)) {
+                    leftLineDiv.classList.add('bg-yellow-100');
+                }
+                leftLineDiv.dataset.rowIndex = i;
+                leftLineDiv.dataset.lineNum = leftRows[i].num || '';
+                if (currentHighlightIndex === i) {
+                    leftLineDiv.classList.add('highlight', 'outline', 'outline-2', 'outline-gray-400', 'relative', 'z-10');
+                }
+
+                const leftRow = leftRows[i];
+                if (leftRow.type === 'placeholder') {
+                    leftLineDiv.classList.add('bg-gray-100', 'text-transparent');
+                    leftLineDiv.textContent = ' ';
+                } else if (leftRow.type === 'modify' && rightRows[i].type === 'modify') {
+                    const rightText = rightRows[i].text;
+                    // 原始内容完全相等 → 无差异
+                    if (leftRow.text === rightText) {
+                        leftLineDiv.textContent = leftRow.text;
+                    } else {
+                        const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+                        if (ignoreWhitespace && isTrimEqual(leftRow.text, rightText)) {
+                            const span = document.createElement('span');
+                            span.className = 'bg-green-100 text-green-700 px-0.5 rounded';
+                            span.textContent = leftRow.text;
+                            leftLineDiv.appendChild(span);
+                        } else if (isAllWhitespaceEqual(leftRow.text, rightText)) {
+                            const span = document.createElement('span');
+                            span.className = 'bg-blue-100 text-blue-700 px-0.5 rounded';
+                            span.textContent = leftRow.text;
+                            leftLineDiv.appendChild(span);
+                        } else {
+                            const charDiff = Diff.diffChars(leftRow.text, rightText);
+                            charDiff.forEach(part => {
+                                if (!part.added) {
+                                    const span = document.createElement('span');
+                                    if (part.removed) span.className = 'bg-red-100 text-red-700 px-0.5 rounded';
+                                    span.textContent = part.value;
+                                    leftLineDiv.appendChild(span);
+                                }
+                            });
+                        }
+                    }
+                } else if (leftRow.type === 'delete' || leftRow.type === 'insert') {
+                    const span = document.createElement('span');
+                    span.className = 'bg-red-100 text-red-700 px-0.5 rounded';
+                    span.textContent = leftRow.text || ' ';
+                    leftLineDiv.appendChild(span);
+                } else {
+                    leftLineDiv.textContent = leftRow.text;
+                }
+                leftContentEl.appendChild(leftLineDiv);
+
+                // 右侧内容行 - 加入 'line' 类
+                const rightLineDiv = document.createElement('div');
+                rightLineDiv.className = 'line h-[22px] leading-[22px] w-full cursor-pointer whitespace-pre box-border';
+                if (isPendingAnchorLine('right', rightRows[i].num)) {
+                    rightLineDiv.classList.add('bg-yellow-100');
+                }
+                rightLineDiv.dataset.rowIndex = i;
+                rightLineDiv.dataset.lineNum = rightRows[i].num || '';
+                if (currentHighlightIndex === i) {
+                    rightLineDiv.classList.add('highlight', 'outline', 'outline-2', 'outline-gray-400', 'relative', 'z-10');
+                }
+
+                const rightRow = rightRows[i];
+                if (rightRow.type === 'placeholder') {
+                    rightLineDiv.classList.add('bg-gray-100', 'text-transparent');
+                    rightLineDiv.textContent = ' ';
+                } else if (rightRow.type === 'modify' && leftRows[i].type === 'modify') {
+                    const leftText = leftRows[i].text;
+                    // 原始内容完全相等 → 无差异
+                    if (rightRow.text === leftText) {
+                        rightLineDiv.textContent = rightRow.text;
+                    } else {
+                        const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+                        if (ignoreWhitespace && isTrimEqual(leftText, rightRow.text)) {
+                            const span = document.createElement('span');
+                            span.className = 'bg-green-100 text-green-700 px-0.5 rounded';
+                            span.textContent = rightRow.text;
+                            rightLineDiv.appendChild(span);
+                        } else if (isAllWhitespaceEqual(leftText, rightRow.text)) {
+                            const span = document.createElement('span');
+                            span.className = 'bg-blue-100 text-blue-700 px-0.5 rounded';
+                            span.textContent = rightRow.text;
+                            rightLineDiv.appendChild(span);
+                        } else {
+                            const charDiff = Diff.diffChars(leftText, rightRow.text);
+                            charDiff.forEach(part => {
+                                if (!part.removed) {
+                                    const span = document.createElement('span');
+                                    if (part.added) span.className = 'bg-red-100 text-red-700 px-0.5 rounded';
+                                    span.textContent = part.value;
+                                    rightLineDiv.appendChild(span);
+                                }
+                            });
+                        }
+                    }
+                } else if (rightRow.type === 'delete' || rightRow.type === 'insert') {
+                    const span = document.createElement('span');
+                    span.className = 'bg-red-100 text-red-700 px-0.5 rounded';
+                    span.textContent = rightRow.text || ' ';
+                    rightLineDiv.appendChild(span);
+                } else {
+                    rightLineDiv.textContent = rightRow.text;
+                }
+                rightContentEl.appendChild(rightLineDiv);
+            }
+
+            document.getElementById('anchorStatus').innerHTML =
+                `<i class="fa-solid fa-anchor text-amber-500 text-[11px]"></i> 锚点: ${anchors.length}${pendingAnchor ? ' (待配对)' : ''}`;
+        }
+
+        // ================================================================
+        //  状态栏
+        // ================================================================
+        function updateStatus(deleteCount, insertCount, modifyCount, spaceDiffCount, ignoredCount) {
+            const statusEl = document.getElementById('statusText');
+            const ignoreEmpty = document.getElementById('ignoreEmptyLines').checked;
+            const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+
+            // 构建选项说明
+            const opts = [];
+            if (ignoreEmpty) opts.push('忽略空行');
+            if (ignoreWhitespace) opts.push('忽略首尾空格');
+            const optStr = opts.length ? ` [${opts.join('+')}]` : ' [无忽略]';
+
+            // 锚点信息
+            let anchorTip = '';
+            if (anchors.length > 0) {
+                anchorTip = ` | <i class="fa-solid fa-anchor text-amber-500"></i> ${anchors.length} 组锚点`;
+            } else if (pendingAnchor) {
+                anchorTip = ` | <i class="fa-solid fa-anchor text-amber-500"></i> 等待配对锚点`;
+            }
+
+            // 计算真正的差异（增删改）
+            const realDiff = deleteCount + insertCount + modifyCount;
+
+            // 判断是否完全一致（包括空格差异被忽略的情况）
+            const hasSpaceDiff = spaceDiffCount > 0;
+            const isAllIgnored = (realDiff === 0) && (!hasSpaceDiff || ignoreWhitespace);
+
+            if (isAllIgnored) {
+                // 完全一致
+                let msg = '完全一致';
+                if ((hasSpaceDiff || ignoredCount > 0) && ignoreWhitespace) {
+                    msg += '（已忽略空格差异）';
+                }
+                msg += optStr + anchorTip;
+                statusEl.innerHTML = msg;
+                statusEl.className = 'font-bold transition-colors text-green-600';
+                return;
+            }
+
+            // 有真实差异（增删改）
+            let parts = [];
+            if (deleteCount > 0 || insertCount > 0) {
+                parts.push(`增删 ${deleteCount + insertCount} 行`);
+            }
+            if (modifyCount > 0) {
+                parts.push(`修改 ${modifyCount} 行`);
+            }
+            if (spaceDiffCount > 0) {
+                parts.push(`空格差异 ${spaceDiffCount} 行`);
+            }
+            if (ignoredCount > 0) {
+                parts.push(`忽略 ${ignoredCount} 行`);
+            }
+
+            let msg = '差异：' + parts.join('，');
+            msg += optStr + anchorTip;
+            statusEl.innerHTML = msg;
+            statusEl.className = 'font-bold transition-colors text-red-600';
+        }
+
+
+        // ================================================================
+        //  对比操作
+        // ================================================================
+        function doCompare() {
+            currentMode = 'original';
+            currentHighlightIndex = null;
+            let leftVal = document.getElementById('leftInput').value;
+            let rightVal = document.getElementById('rightInput').value;
+
+            leftVal = filterEmptyLines(leftVal);
+            rightVal = filterEmptyLines(rightVal);
+
+            renderDiff(leftVal, rightVal);
+
+            const ignoreEmpty = document.getElementById('ignoreEmptyLines').checked;
+            const ignoreSpace = document.getElementById('ignoreWhitespace').checked;
+            const opts = [];
+            if (ignoreEmpty) opts.push('忽略空行');
+            if (ignoreSpace) opts.push('忽略首尾空格');
+            const optStr = opts.length ? ` (${opts.join('+')})` : ' (无忽略)';
+            showToast(
+                '原文对比完成',
+                `左侧 ${splitLines(leftVal).length} 行 · 右侧 ${splitLines(rightVal).length} 行${optStr}`,
+                'success',
+                2500
+            );
+        }
+
+        function doSortCompare() {
+            currentMode = 'sorted';
+            currentHighlightIndex = null;
+
+            let leftVal = document.getElementById('leftInput').value;
+            let rightVal = document.getElementById('rightInput').value;
+
+            leftVal = filterEmptyLines(leftVal);
+            rightVal = filterEmptyLines(rightVal);
+
+            const ignoreSpace = document.getElementById('ignoreWhitespace').checked;
+
+            const leftSorted = sortTextLines(leftVal, ignoreSpace);
+            const rightSorted = sortTextLines(rightVal, ignoreSpace);
+
+            renderDiff(leftSorted, rightSorted);
+
+            const ignoreEmpty = document.getElementById('ignoreEmptyLines').checked;
+            const opts = [];
+            if (ignoreEmpty) opts.push('忽略空行');
+            if (ignoreSpace) opts.push('忽略首尾空格');
+            const optStr = opts.length ? ` (${opts.join('+')})` : ' (无忽略)';
+            showToast(
+                '排序对比完成',
+                `左侧 ${splitLines(leftSorted).length} 行 · 右侧 ${splitLines(rightSorted).length} 行${optStr}`,
+                'success',
+                2500
+            );
+        }
+
+        function reCompare() {
+            if (currentMode === 'original') {
+                doCompare();
+            } else if (currentMode === 'sorted') {
+                doSortCompare();
+            } else {
+                doCompare();
+            }
+        }
+
+        // ================================================================
+        //  交换 / 清空
+        // ================================================================
+        function swapText() {
+            const leftInput = document.getElementById('leftInput');
+            const rightInput = document.getElementById('rightInput');
+
+            const temp = leftInput.value;
+            leftInput.value = rightInput.value;
+            rightInput.value = temp;
+
+            updateInputLineNum('leftInput', 'leftInputLineNum', 'leftCount');
+            updateInputLineNum('rightInput', 'rightInputLineNum', 'rightCount');
+
+            anchors = [];
+            pendingAnchor = null;
+            leftPanel.classList.remove('align-waiting');
+            rightPanel.classList.remove('align-waiting');
+            currentHighlightIndex = null;
+
+            reCompare();
+
+            showToast('已交换', '左右文本内容已互换，锚点已重置', 'warning', 2000);
+        }
+
+        function clearAll() {
+            anchors = [];
+            pendingAnchor = null;
+            currentHighlightIndex = null;
+            leftPanel.classList.remove('align-waiting');
+            rightPanel.classList.remove('align-waiting');
+
+            document.getElementById('leftInput').value = '';
+            document.getElementById('rightInput').value = '';
+            updateInputLineNum('leftInput', 'leftInputLineNum', 'leftCount');
+            updateInputLineNum('rightInput', 'rightInputLineNum', 'rightCount');
+
+            currentMode = 'original';
+            renderDiff('', '');
+            document.getElementById('statusText').innerHTML = '<i class="fa-regular fa-lightbulb"></i> 等待对比…';
+            document.getElementById('statusText').className = 'font-bold transition-colors text-gray-500';
+            document.getElementById('anchorStatus').innerHTML =
+                `<i class="fa-solid fa-anchor text-amber-500 text-[11px]"></i> 锚点: 0`;
+
+            showToast('已清空', '所有内容已重置', 'info', 1800);
+        }
+
+        // ================================================================
+        //  拖拽上传文件
+        // ================================================================
+        function bindInputDragDrop() {
+            const panels = document.querySelectorAll('#leftInputPanel, #rightInputPanel');
+            panels.forEach(panel => {
+                panel.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    panel.classList.add('drag-over', 'outline', 'outline-2', 'outline-dashed', 'outline-blue-500', 'bg-blue-50');
+                });
+                panel.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    panel.classList.remove('drag-over', 'outline', 'outline-2', 'outline-dashed', 'outline-blue-500', 'bg-blue-50');
+                });
+                panel.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    panel.classList.remove('drag-over', 'outline', 'outline-2', 'outline-dashed', 'outline-blue-500', 'bg-blue-50');
+                    const files = e.dataTransfer.files;
+                    if (files.length === 0) return;
+                    const file = files[0];
+                    const type = file.type;
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const textTypes = ['text/plain', 'text/csv', 'text/html', 'application/json', 'application/xml',
+                        'application/javascript'
+                    ];
+                    const textExts = ['txt', 'csv', 'html', 'json', 'xml', 'js', 'css', 'md', 'log'];
+                    if (!textTypes.includes(type) && !textExts.includes(ext)) {
+                        showToast('不支持的文件类型', '请拖入文本文件（如 .txt）', 'warning', 2000);
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const content = ev.target.result;
+                        const side = panel.dataset.side;
+                        const textarea = document.getElementById(side === 'left' ? 'leftInput' : 'rightInput');
+                        const countId = side === 'left' ? 'leftCount' : 'rightCount';
+                        const lineNumId = side === 'left' ? 'leftInputLineNum' : 'rightInputLineNum';
+                        textarea.value = content;
+                        updateInputLineNum(textarea.id, lineNumId, countId);
+                        reCompare();
+                        showToast(
+                            `已加载 ${file.name}`,
+                            `左侧 ${splitLines(content).length} 行`,
+                            'success',
+                            2500
+                        );
+                    };
+                    reader.onerror = () => {
+                        showToast('读取失败', '无法读取文件内容', 'danger', 2000);
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                });
+            });
+        }
+
+        // ================================================================
+        //  右键菜单锚点
+        // ================================================================
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+        }
+
+        function showContextMenu(x, y) {
+            const menuRect = contextMenu.getBoundingClientRect();
+            const maxX = window.innerWidth - menuRect.width - 5;
+            const maxY = window.innerHeight - menuRect.height - 5;
+            contextMenu.style.left = Math.min(x, maxX) + 'px';
+            contextMenu.style.top = Math.min(y, maxY) + 'px';
+            contextMenu.style.display = 'block';
+        }
+
+        document.addEventListener('click', hideContextMenu);
+        document.addEventListener('scroll', hideContextMenu, true);
+
+        function bindContextMenu() {
+            [leftPanel, rightPanel].forEach((panel, idx) => {
+                const side = idx === 0 ? 'left' : 'right';
+                panel.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    const lineEl = e.target.closest('.line');
+                    if (!lineEl) return;
+                    const lineNum = parseInt(lineEl.dataset.lineNum);
+                    if (!lineNum) return;
+                    const rowIndex = parseInt(lineEl.dataset.rowIndex);
+                    highlightRow(rowIndex);
+                    currentContextLine = { side, lineNum };
+                    showContextMenu(e.clientX, e.clientY);
+                });
+            });
+        }
+
+        document.getElementById('menuAlign').addEventListener('click', () => {
+            if (!currentContextLine) return;
+            const { side, lineNum } = currentContextLine;
+
+            if (!pendingAnchor) {
+                pendingAnchor = { side, lineNum };
+                if (side === 'left') {
+                    rightPanel.classList.add('align-waiting');
+                } else {
+                    leftPanel.classList.add('align-waiting');
+                }
+                hideContextMenu();
+                reCompare();
+                showToast('锚点待配对', '请在另一侧点击相同行完成配对', 'warning', 2000);
+                return;
+            }
+
+            if (pendingAnchor.side === side) {
+                pendingAnchor.lineNum = lineNum;
+                hideContextMenu();
+                reCompare();
+                return;
+            }
+
+            const newAnchor = {};
+            if (side === 'left') {
+                newAnchor.left = lineNum;
+                newAnchor.right = pendingAnchor.lineNum;
+            } else {
+                newAnchor.left = pendingAnchor.lineNum;
+                newAnchor.right = lineNum;
+            }
+            anchors.push(newAnchor);
+            anchors.sort((a, b) => a.left - b.left);
+            pendingAnchor = null;
+            leftPanel.classList.remove('align-waiting', 'bg-yellow-50');
+            rightPanel.classList.remove('align-waiting', 'bg-yellow-50');
+            hideContextMenu();
+            reCompare();
+            showToast('锚点已配对', `左侧 ${newAnchor.left} ↔ 右侧 ${newAnchor.right}`, 'success', 2000);
+        });
+
+        document.getElementById('menuClearAlign').addEventListener('click', () => {
+            anchors = [];
+            pendingAnchor = null;
+            leftPanel.classList.remove('align-waiting', 'bg-yellow-50');
+            rightPanel.classList.remove('align-waiting', 'bg-yellow-50');
+            hideContextMenu();
+            reCompare();
+            showToast('锚点已清除', '所有对齐锚点已移除', 'info', 1800);
+        });
+
+        function bindClickAlign() {
+            [leftPanel, rightPanel].forEach((panel, idx) => {
+                const side = idx === 0 ? 'left' : 'right';
+                panel.addEventListener('click', (e) => {
+                    if (!pendingAnchor || pendingAnchor.side === side) return;
+                    const lineEl = e.target.closest('.line');
+                    if (!lineEl) return;
+                    const lineNum = parseInt(lineEl.dataset.lineNum);
+                    if (!lineNum) return;
+
+                    const newAnchor = {};
+                    if (side === 'left') {
+                        newAnchor.left = lineNum;
+                        newAnchor.right = pendingAnchor.lineNum;
+                    } else {
+                        newAnchor.left = pendingAnchor.lineNum;
+                        newAnchor.right = lineNum;
+                    }
+                    anchors.push(newAnchor);
+                    anchors.sort((a, b) => a.left - b.left);
+                    pendingAnchor = null;
+                    leftPanel.classList.remove('align-waiting', 'bg-yellow-50');
+                    rightPanel.classList.remove('align-waiting', 'bg-yellow-50');
+                    reCompare();
+                    showToast('锚点已配对', `左侧 ${newAnchor.left} ↔ 右侧 ${newAnchor.right}`, 'success', 2000);
+                });
+            });
+        }
+
+        // ================================================================
+        //  checkbox 状态联动
+        // ================================================================
+        document.getElementById('ignoreEmptyLines').addEventListener('change', function() {
+            document.getElementById('emptyBadge').textContent = this.checked ? '开' : '关';
+            document.getElementById('emptyBadge').className = 'text-[11px] text-white px-2 py-0.5 rounded-full ml-1' + (this.checked ? ' bg-green-600' : ' bg-gray-600');
+            reCompare();
+        });
+        document.getElementById('ignoreWhitespace').addEventListener('change', function() {
+            document.getElementById('spaceBadge').textContent = this.checked ? '开' : '关';
+            document.getElementById('spaceBadge').className = 'text-[11px] text-white px-2 py-0.5 rounded-full ml-1' + (this.checked ? ' bg-green-600' : ' bg-gray-600');
+            reCompare();
+        });
+        // 初始化徽章
+        document.getElementById('emptyBadge').textContent =
+            document.getElementById('ignoreEmptyLines').checked ? '开' : '关';
+        document.getElementById('spaceBadge').textContent =
+            document.getElementById('ignoreWhitespace').checked ? '开' : '关';
+        document.getElementById('emptyBadge').className =
+            'text-[11px] text-white px-2 py-0.5 rounded-full ml-1' + (document.getElementById('ignoreEmptyLines').checked ? ' bg-green-600' : ' bg-gray-600');
+        document.getElementById('spaceBadge').className =
+            'text-[11px] text-white px-2 py-0.5 rounded-full ml-1' + (document.getElementById('ignoreWhitespace').checked ? ' bg-green-600' : ' bg-gray-600');
+
+        // ================================================================
+        //  初始化
+        // ================================================================
+        bindResultScrollSync();
+        bindInputScrollSync();
+        bindContextMenu();
+        bindClickAlign();
+        bindInputLineNum();
+        bindRowHighlight();
+        bindInputDragDrop();
+
+        renderDiff('', '');
+        document.getElementById('statusText').innerHTML = '<i class="fa-regular fa-lightbulb"></i> 等待对比…';
+        document.getElementById('statusText').className = 'font-bold transition-colors text-gray-500';
+        document.getElementById('anchorStatus').innerHTML =
+            `<i class="fa-solid fa-anchor text-amber-500 text-[11px]"></i> 锚点: 0`;
+    </script>
+</body>
+</html>

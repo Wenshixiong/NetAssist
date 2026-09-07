@@ -1,0 +1,45 @@
+{
+    "DEVICE_MAP": {
+        "TEST-DXCORE-W01": {"as": 200, "router_id": "1.1.1.1", "import": {"bgp": ["direct_test67新建"]}, "bgp_export_policy": "" },
+        "TEST-DXCORE-W02": {"as": 200, "router_id": "1.1.1.2", "import": {"bgp": ["direct_test67新建"]}, "bgp_export_policy": "" },
+        "TEST-MRS-DL-W01": {"as": 205},
+        "TEST-MRS-DL-W02": {"as": 205},
+        "TEST-HX-W01": {
+			"as": 206, 
+			"router_id": "3.3.3.1", 
+			"import": {
+				"ospf": ["static_test66", "direct_test67新建"], 
+				"bgp": ["direct_test22", "static_test23新建","ospf100_test100"]
+			}, 
+			"bgp_export_policy": "test123新建"
+		},
+        "TEST-HX-W02": {
+			"as": 206, 
+			"router_id": "3.3.3.2", 
+			"import": {
+				"ospf": ["static_test66", "direct_test67新建"], 
+				"bgp": ["direct_test22", "static_test23新建"]
+			}, 
+			"bgp_export_policy": "test123新建"
+		},
+        "TEST-BL-W01": {"as": 207, "router_id": "4.4.4.1", "import": {"ospf": ["static", "default"]}},
+        "TEST-BL-W02": {"as": 207, "router_id": "4.4.4.2", "import": {"ospf": ["static", "default"]}},
+        "TEST-GW-W01": {"as": 208, "router_id": "5.5.5.1"},
+        "TEST-GW-W02": {"as": 208, "router_id": "5.5.5.2"}
+    },
+    "VRF_SUBINT_MAP": {
+        "TEST_EX": 402,
+        "TEST_EX_MGMT": 406,
+        "TEST_RC_EX": 403,
+        "TEST_RC_EX_MGMT": 407,
+		"SC1":300,
+		"SC":301,
+		"BG":302,
+		"CS":303,
+		"SC2":304,
+		"BG2":305,
+		"CS3":306,
+		"BG3":307
+    },
+	"PUBLIC_VRF_KEYWORDS": ["public"]
+}

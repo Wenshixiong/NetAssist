@@ -1,0 +1,306 @@
+#
+clock timezone BJ add 08:00:00
+#
+sysname <local_sysname>
+#
+undo ftp server source all-interface
+undo ftp ipv6 server source all-interface
+#
+dfs-group 1
+ priority <mlag_pri>
+ source ip <dad_sip> vpn-instance MGMT peer <dad_dip>
+ consistency-check enable mode loose
+ dual-active detection enhanced enable
+#
+info-center loghost source MEth0/0/0
+info-center loghost X.X.X.X vpn-instance MGMT port XX local-time
+info-center logbuffer size 1024
+#
+ntp server disable
+ntp ipv6 server disable
+ntp server source-interface all disable
+ntp ipv6 server source-interface all disable
+ntp unicast-server X.X.X.X vpn-instance MGMT preferred
+ntp unicast-server X.X.X.X vpn-instance MGMT
+ntp source-interface MEth0/0/0 vpn-instance MGMT
+#
+stp mode rstp
+stp v-stp enable
+stp bpdu-protection
+stp tc-protection
+#
+telnet server disable
+telnet ipv6 server disable
+undo telnet server-source all-interface
+undo telnet ipv6 server-source all-interface
+#
+ip vpn-instance MGMT
+ ipv4-family
+  route-distinguisher 100:1
+#
+acl number 2000
+ description SSH
+ rule 5 permit vpn-instance MGMT source X.X.X.X 0
+ rule 10 permit vpn-instance MGMT source X.X.X.0 0.0.0.255
+#
+acl number 2010
+ description SNMP
+ rule 5 permit vpn-instance MGMT source X.X.X.X 0
+#
+aaa
+ undo local-user policy security-enhance
+ local-user XXXXXX password irreversible-cipher XXXX
+ local-user XXXXXX service-type terminal ssh
+ local-user XXXXXX level 3
+#
+interface MEth0/0/0
+ description MGMT
+ ip binding vpn-instance MGMT
+ ip address <mgmt_ip> 255.255.255.0
+#
+interface Eth-Trunk0
+ description to <remote_sysname> Eth-Trunk0
+ mode lacp-static
+ peer-link 1
+#
+interface 10GE1/0/1
+ shutdown
+#
+interface 10GE1/0/2
+ shutdown
+#
+interface 10GE1/0/3
+ shutdown
+#
+interface 10GE1/0/4
+ shutdown
+#
+interface 10GE1/0/5
+ shutdown
+#
+interface 10GE1/0/6
+ shutdown
+#
+interface 10GE1/0/7
+ shutdown
+#
+interface 10GE1/0/8
+ shutdown
+#
+interface 10GE1/0/9
+ shutdown
+#
+interface 10GE1/0/10
+ shutdown
+#
+interface 10GE1/0/11
+ shutdown
+#
+interface 10GE1/0/12
+ shutdown
+#
+interface 10GE1/0/13
+ shutdown
+#
+interface 10GE1/0/14
+ shutdown
+#
+interface 10GE1/0/15
+ shutdown
+#
+interface 10GE1/0/16
+ shutdown
+#
+interface 10GE1/0/17
+ shutdown
+#
+interface 10GE1/0/18
+ shutdown
+#
+interface 10GE1/0/19
+ shutdown
+#
+interface 10GE1/0/20
+ shutdown
+#
+interface 10GE1/0/21
+ shutdown
+#
+interface 10GE1/0/22
+ shutdown
+#
+interface 10GE1/0/23
+ shutdown
+#
+interface 10GE1/0/24
+ shutdown
+#
+interface 10GE1/0/25
+ shutdown
+#
+interface 10GE1/0/26
+ shutdown
+#
+interface 10GE1/0/27
+ shutdown
+#
+interface 10GE1/0/28
+ shutdown
+#
+interface 10GE1/0/29
+ shutdown
+#
+interface 10GE1/0/30
+ shutdown
+#
+interface 10GE1/0/31
+ shutdown
+#
+interface 10GE1/0/32
+ shutdown
+#
+interface 10GE1/0/33
+ shutdown
+#
+interface 10GE1/0/34
+ shutdown
+#
+interface 10GE1/0/35
+ shutdown
+#
+interface 10GE1/0/36
+ shutdown
+#
+interface 10GE1/0/37
+ shutdown
+#
+interface 10GE1/0/38
+ shutdown
+#
+interface 10GE1/0/39
+ shutdown
+#
+interface 10GE1/0/40
+ shutdown
+#
+interface 10GE1/0/41
+ shutdown
+#
+interface 10GE1/0/42
+ shutdown
+#
+interface 10GE1/0/43
+ shutdown
+#
+interface 10GE1/0/44
+ shutdown
+#
+interface 10GE1/0/45
+ shutdown
+#
+interface 10GE1/0/46
+ shutdown
+#
+interface 10GE1/0/47
+ shutdown
+#
+interface 10GE1/0/48
+ shutdown
+#
+interface 100GE1/0/1
+ shutdown
+#
+interface 100GE1/0/2
+ shutdown
+#
+interface 100GE1/0/3
+ shutdown
+#
+interface 100GE1/0/4
+ shutdown
+#
+interface 100GE1/0/5
+ description to <remote_sysname> 100GE1/0/5
+ eth-trunk 0
+#
+interface 100GE1/0/6
+ description to <remote_sysname> 100GE1/0/6
+ eth-trunk 0
+#
+ip route-static vpn-instance MGMT 0.0.0.0 0.0.0.0 <mgmtip_gw>
+#
+snmp-agent
+#
+snmp-agent sys-info version v3
+snmp-agent group v3 XXX privacy read-view rd acl 2010
+#
+snmp-agent mib-view included rd iso
+snmp-agent usm-user v3 XXX
+snmp-agent usm-user v3 XXX group XXX
+snmp-agent usm-user v3 XXX authentication-mode XX cipher XXXXXX
+snmp-agent usm-user v3 XXX privacy-mode XX cipher XXXXXX
+#
+snmp-agent protocol vpn-instance MGMT
+#
+snmp-agent protocol source-interface MEth0/0/0
+undo snmp-agent protocol source-status all-interface
+undo snmp-agent protocol source-status ipv6 all-interface
+#
+undo snmp-agent proxy protocol source-status all-interface
+undo snmp-agent proxy protocol source-status ipv6 all-interface
+#
+lldp enable
+lldp mdn enable
+#
+stelnet server enable
+ssh user XXXXXX
+ssh user XXXXXX authentication-type password
+ssh user XXXXXX service-type stelnet
+ssh server-source -i MEth0/0/0
+undo ssh server-source all-interface
+undo ssh ipv6 server-source all-interface
+ssh authorization-type default aaa
+#
+ssh server cipher aes256_gcm aes128_gcm aes256_ctr aes192_ctr aes128_ctr aes256_cbc aes128_cbc 3des_cbc
+ssh server hmac sha2_512 sha2_256_96 sha2_256 sha1 sha1_96 md5 md5_96
+ssh server key-exchange dh_group_exchange_sha256 dh_group_exchange_sha1 dh_group14_sha1 dh_group1_sha1 ecdh_sha2_nistp256 ecdh_sha2_nistp384 ecdh_sha2_nistp521 sm2_kep
+#
+ssh server publickey dsa ecc rsa rsa_sha2_256 rsa_sha2_512
+#
+ssh server dh-exchange min-len 1024
+#
+ssh client first-time enable
+#
+ssh client publickey dsa ecc rsa rsa_sha2_256 rsa_sha2_512
+#
+ssh client cipher aes256_gcm aes128_gcm aes256_ctr aes192_ctr aes128_ctr aes256_cbc aes128_cbc 3des_cbc
+ssh client hmac sha2_512 sha2_256_96 sha2_256 sha1 sha1_96 md5 md5_96
+ssh client key-exchange dh_group_exchange_sha256 dh_group_exchange_sha1 dh_group14_sha1 dh_group1_sha1 ecdh_sha2_nistp256 ecdh_sha2_nistp384 ecdh_sha2_nistp521 sm2_kep
+#
+command-privilege level 1 view shell cd
+command-privilege level 1 view shell compare configuration
+command-privilege level 1 view shell dir
+command-privilege level 1 view global display current-configuration
+command-privilege level 1 view global display current-configuration configuration
+command-privilege level 1 view global display current-configuration interface
+command-privilege level 1 view global display logbuffer
+command-privilege level 1 view global display saved-configuration
+command-privilege level 1 view global display trapbuffer
+command-privilege level 1 view shell ftp
+command-privilege level 1 view shell more
+command-privilege level 1 view shell screen-length
+command-privilege level 1 view shell unzip
+#
+user-interface maximum-vty 15
+#
+user-interface con 0
+ authentication-mode aaa
+ idle-timeout 5 0
+#
+user-interface vty 0 14
+ acl 2000 inbound
+ authentication-mode aaa
+ idle-timeout 5 0
+ protocol inbound ssh
+#
+return

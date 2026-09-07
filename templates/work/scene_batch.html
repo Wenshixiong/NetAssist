@@ -1,0 +1,735 @@
+{% extends "base.html" %}
+
+{% block title %}{{ super() }} - 场景化生成{% endblock %}
+
+{% block content %}
+<!-- 顶部导航 -->
+<header class="bg-white shadow-sm transition-all duration-300 mb-2">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-2 transition-all duration-300 hover:shadow-lg">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">场景化生成</h1>
+        <p class="text-gray-600">
+            可以根据不同场景批量生成脚本的工具，包含变更脚本和回退脚本。
+        </p>
+    </div>
+</header>
+
+<main>
+
+    <!-- ============================================= -->
+    <!-- 区块一：参数选择与生成控制 -->
+    <!-- ============================================= -->
+    <section class="bg-white rounded-xl shadow-custom transition-all duration-300 mb-2 overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-xl font-bold flex items-center mb-6">
+                <i class="fa fa-cogs text-primary mr-2"></i>场景选择
+            </h2>
+
+            <!-- 参数表单：Grid 左右结构，标签固定宽度，控件占剩余 -->
+            <div class="grid grid-cols-1 md:grid-cols-[140px,1fr] gap-x-6 gap-y-4 items-center">
+                <!-- json设备名称映射表来源 -->
+                <label for="devicemappinginfo" class="font-medium text-gray-700 md:text-right">
+                    <i class="fa-solid fa-file-code text-blue-600 mr-1"></i>业务分区映射：
+                </label>
+                <div class="flex flex-wrap items-center gap-2 w-full">
+                    <select name="devicemappinginfo" id="devicemappinginfo"
+                            class="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary {% if not device_mappings %}text-gray-500 text-sm disabled{% endif %}">
+                        
+                        {% if device_mappings %}
+                            {% for mapping in device_mappings %}
+                                <option value="{{ mapping.filename }}">{{ mapping.filename }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled selected>暂无映射表文件，请先上传后再来选择</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <!-- 数据来源 -->
+                <label for="datasource" class="font-medium text-gray-700 md:text-right">
+                    <i class="fa-solid fa-file-excel text-green-600 mr-1"></i>数据来源文件：
+                </label>
+                <div class="flex flex-wrap items-center gap-2 w-full">
+                    <select name="datasource" id="datasource"
+                            class="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary {% if not file_names %}text-gray-500 text-sm disabled{% endif %}">
+                        <option value="" disabled selected>请选择</option>
+                        {% if file_names %}
+                            {% for file in file_names %}
+                                <option value="{{ file.filename }}">{{ file.filename }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled selected>暂无数据来源文件，请先上传后再来选择</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 执行场景 -->
+                <label for="sheetname" class="font-medium text-gray-700 md:text-right">
+                    <i class="fa fa-tasks text-blue-600 mr-1"></i>执行的工作表：
+                </label>
+                <select name="sheetname" id="sheetname" disabled
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:opacity-100 focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    <!-- 选项由 JS 动态填充 -->
+                </select>
+                <!-- 已下发的专线 -->
+                <label for="customline" class="font-medium text-gray-700 md:text-right">
+                    <i class="fa fa-cloud-upload text-indigo-600 mr-1"></i>已下发的专线：
+                </label>
+                <select name="customline" id="customline" disabled
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-200 disabled:opacity-100 focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    <!-- 选项由 JS 动态填充 -->
+                    <option value="" disabled selected>不涉及</option>
+                </select>
+            </div>
+
+            <!-- 操作栏：状态 + 按钮，与参数表单分隔 -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
+                <div class="flex items-center gap-2">
+                    <span id="statusText" class="text-sm font-medium text-blue-600">当前状态：未开始</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="generateButton"
+                            class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-custom flex items-center gap-2 shadow-sm">
+                        <i class="fa fa-magic"></i> 开始生成
+                    </button>
+                    <button id="resetButton"
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-6 rounded-lg transition-custom flex items-center gap-2 shadow-sm">
+                        <i class="fa fa-undo"></i> 重置状态
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- 区块二：生成的脚本文件列表 -->
+    <!-- ============================================= -->
+    <section class="bg-white rounded-xl shadow-custom transition-all duration-300 mb-2 overflow-hidden">
+        <div class="p-6">
+            <div class="flex flex-wrap items-center justify-between mb-6 gap-3">
+                <h2 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-folder-open text-primary mr-2"></i>生成结果
+                    <span class="text-xs text-gray-500 ml-2">（本地目录 generated_scripts）</span>
+                </h2>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="openLocalDirBtn"
+                            class="text-green-600 hover:text-green-800 text-sm flex items-center transition-custom">
+                        <i class="fa fa-folder-open mr-1"></i> 打开本地目录
+                    </button>
+                    <button id="refreshBtn"
+                            class="text-primary hover:text-primary/80 text-sm flex items-center transition-custom">
+                        <i class="fa fa-refresh mr-1"></i> 刷新列表
+                    </button>
+
+                    <button id="downloadAllButton"
+                            class="text-primary hover:text-primary/80 text-sm flex items-center transition-custom">
+                        <i class="fa fa-download mr-1"></i> 下载全部
+                    </button>
+                    <button id="deleteAllButton"
+                            class="text-red-600 hover:text-red-900 text-sm flex items-center transition-custom">
+                        <i class="fa fa-trash mr-1"></i> 删除全部
+                    </button>
+                </div>
+            </div>
+
+            <!-- 目录导航栏 -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="font-medium text-gray-600">当前路径：</span>
+                    <span id="currentPathDisplay" class="text-gray-800">/</span>
+                </div>
+                <button id="goBackBtn" class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-arrow-left"></i> 返回上一级
+                </button>
+            </div>
+
+            <!-- 文件列表表格 -->
+            <div id="scriptTable">
+                <!-- 由 JavaScript 动态渲染 -->
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- 确认删除模态框（共用） -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold text-gray-900 mb-3">确认删除</h3>
+        <p class="text-gray-600 mb-6" id="deleteModalMessage">您确定要删除这个文件吗？此操作不可撤销。</p>
+        <div class="flex justify-end space-x-3">
+            <button id="cancelDelete"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-custom">取消</button>
+            <button id="confirmDelete"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-custom">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 提示容器 -->
+<div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+<script>
+    // ===== 全局变量 =====
+    let currentPathToDelete = '';
+    let currentPath = '';          // 当前子目录相对路径（相对于 RESULTS_FOLDER）
+    let isDeleteAll = false;       // 标记是否为删除全部操作
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ---- DOM 元素 ----
+        const deviceMappingSelect = document.getElementById('devicemappinginfo');
+        const dataSourceSelect = document.getElementById('datasource');
+        const sheetnameSelect = document.getElementById('sheetname');
+        const customlineSelect = document.getElementById('customline');
+        const generateButton = document.getElementById('generateButton');
+        const statusText = document.getElementById('statusText');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const openLocalDirBtn = document.getElementById('openLocalDirBtn');
+        const downloadAllBtn = document.getElementById('downloadAllButton');
+        const deleteAllBtn = document.getElementById('deleteAllButton');
+        const resetBtn = document.getElementById('resetButton');
+        const deleteModal = document.getElementById('deleteModal');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const deleteModalMessage = document.getElementById('deleteModalMessage');
+        const goBackBtn = document.getElementById('goBackBtn');
+        const currentPathDisplay = document.getElementById('currentPathDisplay');
+        const scriptTable = document.getElementById('scriptTable');
+
+        // ---- Toast 函数 ----
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            const bgColor = colors[type] || colors.info;
+            toast.className = `${bgColor} text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ---- 1. 数据源选择变化时加载 sheet 列表 ----
+        function loadSheets() {
+            const selectedFile = dataSourceSelect.value;
+            if (selectedFile) {
+                fetch(`/get_sheet_name?filename=${encodeURIComponent(selectedFile)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.sheets && data.sheets.length > 0) {
+                            sheetnameSelect.innerHTML = data.sheets.map(s =>
+                                `<option value="${s}">${s}</option>`
+                            ).join('');
+                            sheetnameSelect.disabled = false;
+                        } else {
+                            sheetnameSelect.innerHTML = '';
+                            sheetnameSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取sheet失败：', error);
+                        sheetnameSelect.innerHTML = '';
+                        sheetnameSelect.disabled = true;
+                    });
+            } else {
+                sheetnameSelect.innerHTML = '';
+                sheetnameSelect.disabled = true;
+            }
+        }
+        // ---- 数据源选择变化时加载专线文件列表 ----
+        dataSourceSelect.addEventListener('change', function() {
+            // 原有 loadSheets() 保持不变
+            loadSheets();
+
+            const selectedFile = this.value;
+            // 判断文件名是否包含关键词
+            if (selectedFile && (selectedFile.includes('自定义') || selectedFile.includes('云专线'))) {
+                // 只有当下拉框中存在除提示外的选项时才启用
+                if (customlineSelect.options.length > 1) {
+                    customlineSelect.disabled = false;
+                    // 如果当前选中项是提示（索引0），则自动选中第一个文件（索引1）
+                    if (customlineSelect.selectedIndex === 0) {
+                        customlineSelect.selectedIndex = 1;
+                    }
+                } else {
+                    // 没有可用的专线文件，仍禁用并显示提示
+                    customlineSelect.disabled = true;
+                    customlineSelect.selectedIndex = 0;
+                }
+            } else {
+                // 不满足关键词：禁用并回到提示选项
+                customlineSelect.disabled = true;
+                customlineSelect.selectedIndex = 0;
+            }
+        });
+
+        // ---- 2. 开始生成 ----
+        generateButton.addEventListener('click', function () {
+            const formData = {
+                devicemappinginfo: deviceMappingSelect.value,
+                datasource: dataSourceSelect.value,
+                sheetname: sheetnameSelect.value,
+                customline: document.getElementById('customline').value
+            };
+            if (!formData.devicemappinginfo) {
+                statusText.textContent = '当前状态：请选择设备名称映射表';
+                statusText.style.color = 'red';
+                return;
+            }
+            if (!formData.datasource) {
+                statusText.textContent = '当前状态：请选择数据源文件';
+                statusText.style.color = 'red';
+                return;
+            }
+            if (!formData.sheetname) {
+                statusText.textContent = '当前状态：请选择执行场景';
+                statusText.style.color = 'red';
+                return;
+            }
+
+
+            generateButton.disabled = true;
+            statusText.textContent = '当前状态：生成中...';
+            statusText.style.color = 'orange';
+
+            fetch('/generate_scripts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    statusText.textContent = `当前状态：生成成功！`;
+                    statusText.style.color = 'green';
+                    showToast('生成成功！', 'success');
+                    loadDirectory(currentPath);
+                } else {
+                    statusText.textContent = `当前状态：${result.msg || '生成失败'}`;
+                    statusText.style.color = 'red';
+                    showToast('生成失败：' + (result.msg || ''), 'error');
+                }
+            })
+            .catch(error => {
+                statusText.textContent = '当前状态：请求失败，请重试';
+                statusText.style.color = 'red';
+                showToast('请求失败，请重试', 'error');
+                console.error('生成失败：', error);
+            })
+            .finally(() => {
+                generateButton.disabled = false;
+            });
+        });
+
+        // ---- 3. 重置 ----
+        resetBtn.addEventListener('click', function () {
+            location.reload();
+        });
+
+        // ---- 4. 刷新按钮 ----
+        refreshBtn.addEventListener('click', function () {
+            loadDirectory(currentPath);
+            showToast('列表已刷新', 'info');
+        });
+
+        // ---- 5. 下载全部 ----
+        downloadAllBtn.addEventListener('click', async function () {
+            try {
+                const response = await fetch('/download_all');
+                if (!response.ok) {
+                    throw new Error(`HTTP错误：${response.status}`);
+                }
+                const blob = await response.blob();
+
+                // 从 Content-Disposition 头解析文件名（后端通过 download_name 设置）
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = null;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename=(.+)/);
+                    if (match) {
+                        filename = match[1];
+                    }
+                }
+                // 如果没有解析到文件名，报错，不使用默认值
+                if (!filename) {
+                    throw new Error('响应头中未包含有效的文件名');
+                }
+
+                // 触发下载
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                showToast('下载成功！', 'success');
+            } catch (error) {
+                console.error('下载全部失败：', error);
+                showToast('下载失败：' + error.message, 'error');
+            }
+        });
+
+
+        // ---- 5.2. 单个文件下载（使用 fetch，带 Toast） ----
+        document.getElementById('scriptTable').addEventListener('click', async function (e) {
+            const target = e.target.closest('.download-single-btn');
+            if (!target) return;
+
+            const path = target.dataset.path;
+            if (!path) return;
+
+            try {
+                const response = await fetch(`/download_script/${encodeURIComponent(path)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP错误：${response.status}`);
+                }
+
+                const blob = await response.blob();
+                // 从 Content-Disposition 解析文件名（优先使用后端提供的）
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = null;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename\s*=\s*"?([^";]+)"?/);
+                    if (match) {
+                        filename = match[1].trim();
+                    }
+                }
+                // 若后端未提供，则从路径中提取文件名
+                if (!filename) {
+                    filename = path.split('/').pop();
+                }
+
+                // 触发下载
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                showToast('下载成功！', 'success');
+            } catch (error) {
+                console.error('下载文件失败：', error);
+                showToast('下载失败：' + error.message, 'error');
+            }
+        });
+
+
+        // ---- 6. 删除全部（模态框） ----
+        deleteAllBtn.addEventListener('click', function () {
+            isDeleteAll = true;
+            deleteModalMessage.textContent = '确定要删除输出目录下的所有文件和子目录吗？此操作不可撤销！';
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('flex');
+        });
+
+        // ---- 7. 删除确认模态框（共用） ----
+        cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+        deleteModal.addEventListener('click', function (e) {
+            if (e.target === this) hideDeleteModal();
+        });
+
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (isDeleteAll) {
+                // 删除全部
+                fetch('/delete_all', { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        hideDeleteModal();
+                        if (data.success) {
+                            showToast('所有文件已成功删除', 'success');
+                            loadDirectory('');
+                        } else {
+                            showToast('删除失败：' + (data.message || '未知错误'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        hideDeleteModal();
+                        console.error('删除全部失败：', error);
+                        showToast('删除过程出错，请重试', 'error');
+                    });
+                isDeleteAll = false;
+            } else {
+                // 删除单个文件
+                if (!currentPathToDelete) return;
+                fetch(`/delete_script/${encodeURIComponent(currentPathToDelete)}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        hideDeleteModal();
+                        if (data.success) {
+                            showToast('文件删除成功', 'success');
+                            loadDirectory(currentPath);
+                        } else {
+                            showToast('删除失败：' + (data.message || '未知错误'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        hideDeleteModal();
+                        console.error('删除失败：', error);
+                        showToast('删除过程出错，请重试', 'error');
+                    });
+                currentPathToDelete = '';
+            }
+        });
+
+        function hideDeleteModal() {
+            deleteModal.classList.add('hidden');
+            deleteModal.classList.remove('flex');
+            currentPathToDelete = '';
+            isDeleteAll = false;
+        }
+
+        // ---- 8. 加载目录（不传 root） ----
+        function loadDirectory(path) {
+            scriptTable.innerHTML = `
+                <div class="text-center py-10 text-gray-500">
+                    <i class="fa fa-spinner fa-spin text-3xl mb-3"></i>
+                    <p>加载中...</p>
+                </div>
+            `;
+            fetch(`/get_dir_list?path=${encodeURIComponent(path)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentPath = data.current_path;
+                        const breadcrumb = data.breadcrumb;
+                        currentPathDisplay.textContent = breadcrumb.length ? '/' + breadcrumb.join('/') : '/';
+                        goBackBtn.disabled = (breadcrumb.length === 0);
+                        renderTable(data.items);
+                    } else {
+                        showToast('加载失败：' + (data.message || '未知错误'), 'error');
+                        scriptTable.innerHTML = `<div class="text-center py-10 text-red-500">加载失败</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('加载目录失败：', error);
+                    showToast('加载目录失败，请重试', 'error');
+                    scriptTable.innerHTML = `<div class="text-center py-10 text-red-500">加载失败</div>`;
+                });
+        }
+
+        // ---- 9. 渲染表格 ----
+        function renderTable(items) {
+            const container = document.getElementById('scriptTable');
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fa fa-folder-open-o text-5xl mb-3 opacity-30"></i>
+                        <p>此目录为空</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let rows = '';
+            items.forEach(item => {
+                if (item.type === 'dir') {
+                    rows += `
+                        <tr class="hover:bg-gray-50 transition-custom cursor-pointer" ondblclick="enterDirectory('${escapeJs(item.rel_path)}')">
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <i class="fa fa-folder text-yellow-500 mr-2"></i>
+                                    <span class="font-medium text-gray-900">${escapeHtml(item.name)}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">-</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">-</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="enterDirectory('${escapeJs(item.rel_path)}')" 
+                                        class="text-blue-600 hover:text-blue-900 transition-custom">
+                                    <i class="fa fa-sign-in mr-1"></i>进入
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const relPath = item.rel_path;
+                    const mtime = item.mtime || '';
+                    const size = item.size || 0;
+                    rows += `
+                        <tr class="hover:bg-gray-50 transition-custom">
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <i class="fa fa-file-text-o text-primary mr-2"></i>
+                                    <span class="font-medium text-gray-900">${escapeHtml(item.name)}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${mtime}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${size} KB</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="/view_script/${relPath}" target="_blank" class="text-blue-600 hover:text-blue-900 mr-3 transition-custom">
+                                    <i class="fa fa-eye mr-1"></i>查看
+                                </a>
+                                <button class="download-single-btn text-blue-600 hover:text-blue-900 mr-3 transition-custom" 
+                                        data-path="${relPath}">
+                                    <i class="fa fa-download mr-1"></i>下载
+                                </button>
+                                <button onclick="deleteScript('${escapeJs(relPath)}')" class="text-red-600 hover:text-red-900 transition-custom">
+                                    <i class="fa fa-trash mr-1"></i>删除
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">
+                                    文件名
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    修改时间
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    大小
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">
+                                    操作
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // ---- 10. 进入目录 ----
+        window.enterDirectory = function(relPath) {
+            loadDirectory(relPath);
+        };
+
+        // ---- 11. 返回上一级 ----
+        goBackBtn.addEventListener('click', function() {
+            if (currentPath) {
+                const parts = currentPath.split('/');
+                parts.pop();
+                const parent = parts.join('/');
+                loadDirectory(parent);
+            }
+        });
+
+        // ---- 12. 删除脚本 ----
+        window.deleteScript = function(relPath) {
+            isDeleteAll = false;
+            currentPathToDelete = relPath;
+            deleteModalMessage.textContent = `您确定要删除文件 "${relPath}" 吗？此操作不可撤销。`;
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('flex');
+        };
+
+        // ---- 13. 打开本地目录 ----
+        openLocalDirBtn.addEventListener('click', function() {
+            const path = currentPath || '';
+            fetch(`/open_local_dir?path=${encodeURIComponent(path)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('已打开本地目录', 'success');
+                    } else {
+                        showToast('打开目录失败：' + (data.message || ''), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('打开目录失败：', error);
+                    showToast('打开目录请求失败', 'error');
+                });
+        });
+
+        // ---- 14. 辅助函数 ----
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        function escapeJs(str) {
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        // ---- 15. 页面初始化加载根目录 ----
+        loadDirectory('');
+
+        // 加载自定义专线文件列表（用于下拉框）
+        function loadCustomLineFiles() {
+            fetch('/get_custom_line_files')
+                .then(res => res.json())
+                .then(data => {
+                    // 清空，保留第一个提示选项（但需要用 innerHTML 重设）
+                    customlineSelect.innerHTML = '<option value="" disabled selected>不涉及</option>';
+                    
+                    if (data.success && data.files.length > 0) {
+                        // 追加实际文件选项
+                        data.files.forEach(f => {
+                            const opt = document.createElement('option');
+                            opt.value = f;
+                            opt.textContent = f;
+                            customlineSelect.appendChild(opt);
+                        });
+                        // 默认保持禁用，等待数据源联动
+                        customlineSelect.disabled = true;
+                        customlineSelect.selectedIndex = 0; // 显示提示
+                    } else {
+                        // 无文件时仅显示提示
+                        customlineSelect.disabled = true;
+                        customlineSelect.selectedIndex = 0;
+                    }
+                })
+                .catch(err => {
+                    console.error('加载专线文件失败：', err);
+                    customlineSelect.innerHTML = '<option value="" disabled selected>加载失败</option>';
+                    customlineSelect.disabled = true;
+                });
+        }
+        // 在 DOMContentLoaded 中调用
+        loadCustomLineFiles();
+
+        // 加载设备映射表文件列表
+        function loadDeviceMappings() {
+            const select = document.getElementById('devicemappinginfo');
+            fetch('/get_device_mappings')   // 假设后端提供此接口，返回 { success, mappings: [{filename: ...}] }
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.device_mappings && data.device_mappings.length > 0) {
+                        select.innerHTML = '';
+                        data.device_mappings.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.filename;
+                            opt.textContent = m.filename;
+                            select.appendChild(opt);
+                        });
+                        select.disabled = false;
+                    } else {
+                        select.innerHTML = '<option value="" disabled selected>暂无映射表文件，请先上传后再来选择</option>';
+                        select.disabled = true;
+                    }
+                })
+                .catch(err => {
+                    console.error('加载设备映射表失败：', err);
+                    select.innerHTML = '<option value="" disabled selected>加载失败</option>';
+                    select.disabled = true;
+                });
+        }
+
+        // 页面初始化时加载映射表
+        loadDeviceMappings();
+
+
+    }); // end DOMContentLoaded
+</script>
+{% endblock %}
