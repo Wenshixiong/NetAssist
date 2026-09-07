@@ -1,36 +1,28 @@
 # =====1、引入的库====
 import os
 import sys
-import socket
 import psutil
-from functools import wraps
 from flask import Flask, render_template, redirect, url_for, request, flash, send_file, jsonify, send_from_directory
 from io import BytesIO
 import re
-from datetime import datetime, date
-import pandas 
+from datetime import datetime
 import pandas as pd
 import time
 import openpyxl
 import warnings
-from openpyxl import reader
-from openpyxl import load_workbook
-from urllib.parse import quote
+from openpyxl import reader, load_workbook
 import zipfile
 from dateutil.relativedelta import relativedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
-from typing import Dict, List, Any
+from typing import Dict
 import platform
 import subprocess
 import shutil
 from waitress import serve
-import json
-import ipaddress
-from collections import defaultdict, OrderedDict
 import importlib.util
-
 import logging
+
 # ========== 调试日志控制（独立于预加载模式） ==========
 DEBUG_MODE = os.getenv('NETASSIST_DEBUG', 'false').lower() == 'true'
 if DEBUG_MODE:
@@ -2781,7 +2773,7 @@ def get_sheets():
             return jsonify({'success': False, 'message': '文件不存在或格式不支持'}), 404
             
         # 读取Excel文件的所有sheet名称
-        excel_file = pandas.ExcelFile(file_path)
+        excel_file = pd.ExcelFile(file_path)
         sheets = excel_file.sheet_names
         
         return jsonify({'success': True, 'sheets': sheets})
