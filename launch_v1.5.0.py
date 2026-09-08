@@ -18,6 +18,8 @@ import pystray
 import ctypes
 import re
 import webbrowser
+import importlib.util
+from version import APP_NAME, version_text
 
 # ---------- 资源路径 ----------
 def resource_path(relative_path):
@@ -38,7 +40,7 @@ tray_icon = None
 is_window_visible = True
 system_icon = resource_path("static/icons/NetAssist_64.png")
 windows_icon = resource_path("static/icons/NetAssist_64.ico")
-title_name = "NetAssist 网络运维工具v1.4"
+title_name = f"{APP_NAME}{version_text()}"
 DEFAULT_PORT = 5001
 # ---------- 端口检测 ----------
 def is_port_in_use(port, host='127.0.0.1'):
@@ -78,14 +80,19 @@ def run_netassist(q, port, env=None):
     sys.stderr = QueueWriter(q)
     try:
 
-        import NetAssist_外部版本
+        module_path = resource_path("NetAssist_v1.5.0.py")
+        module_spec = importlib.util.spec_from_file_location("NetAssist_app", module_path)
+        if module_spec is None or module_spec.loader is None:
+            raise ImportError(f"无法加载 NetAssist 模块: {module_path}")
+        NetAssist_app = importlib.util.module_from_spec(module_spec)
+        module_spec.loader.exec_module(NetAssist_app)
         # 先执行缓存初始化（会输出日志到 QueueWriter）
-        NetAssist_外部版本.initialize_cache()
+        NetAssist_app.initialize_cache()
         # 再启动 Web 服务器
         # Waitress 生产服务器启动
-        serve(NetAssist_外部版本.app, host='0.0.0.0', port=port, threads=8)
+        serve(NetAssist_app.app, host='0.0.0.0', port=port, threads=8)
         # Werkzeug 开发服务器启动
-        # NetAssist_外部版本.app.run(host='127.0.0.1', port=port, debug=True)
+        # NetAssist_app.app.run(host='127.0.0.1', port=port, debug=True)
         
     except Exception as e:
         print(f"NetAssist 启动失败: {e}")

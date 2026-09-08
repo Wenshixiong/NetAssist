@@ -22,6 +22,7 @@ import shutil
 from waitress import serve
 import importlib.util
 import logging
+from version import APP_NAME, VERSION, version_text
 
 # ========== 调试日志控制（独立于预加载模式） ==========
 DEBUG_MODE = os.getenv('NETASSIST_DEBUG', 'false').lower() == 'true'
@@ -693,6 +694,16 @@ def inject_menu():
         # 其他菜单项按相同结构追加
     ]
     return {'menu': menu}
+
+
+@app.context_processor
+def inject_app_version():
+    return {
+        'app_name': APP_NAME,
+        'app_version': VERSION,
+        'app_version_text': version_text(),
+    }
+
 
 # index.html功能卡片
 @app.context_processor
