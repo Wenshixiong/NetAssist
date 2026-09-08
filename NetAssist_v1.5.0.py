@@ -82,7 +82,7 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     else:
         # 开发环境运行
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 
@@ -101,7 +101,7 @@ cloud_process = load_module_from_path(CLOUD_MODULE, "CLOUD_MODULE")
 
 
 # =====2、初始化应用====
-app = Flask(__name__)
+app = Flask(__name__, template_folder=resource_path('html'))
 # 获取当前文件目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # print(f"[Info] 当前页面存放目录: {app.template_folder}")
