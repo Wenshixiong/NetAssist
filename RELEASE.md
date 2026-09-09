@@ -61,28 +61,13 @@
 
 ## 运行方式
 
-### 源码运行
-```bash
-pip install -r requirements.txt
-python launch_v1.5.2.py
-```
-服务默认监听 `http://127.0.0.1:5001`。
+1. 双击 `NetAssist_v1.5.2.exe` 启动程序，弹出 GUI 启动器界面
+2. 在启动器中确认端口（默认 5001），点击「启动服务」
+3. 浏览器自动打开或手动访问 `http://127.0.0.1:5001`
+4. 首次启动时，程序会自动将示例 Excel、脚本模板等数据文件释放到 exe 所在目录
+5. 关闭启动器窗口后程序最小化至系统托盘，右键托盘图标可退出
 
-### 打包为 exe
-```bash
-pip install pyinstaller
-pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons/NetAssist_64.ico" ^
-    --add-data "asset_info;asset_info" ^
-    --add-data "html;html" ^
-    --add-data "templates_uploads;templates_uploads" ^
-    --add-data "data_uploads;data_uploads" ^
-    --add-data "imported_mods;imported_mods" ^
-    --add-data "static/css;static/css" ^
-    --add-data "static/icons;static/icons" ^
-    --add-data "static/js;static/js" ^
-    --add-data "static/fontawesome-free;static/fontawesome-free" ^
-    launch_v1.5.2.py
-```
+> 使用前请将实际的设备维护清单和 LLDP 互联表放入 exe 同目录的 `asset_info` 文件夹，使用批量脚本功能时需要在 `设备清单及拓扑映射表.txt` 中配置。
 
 ---
 
