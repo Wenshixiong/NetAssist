@@ -64,7 +64,7 @@
 ### 源码运行
 ```bash
 pip install -r requirements.txt
-python launch_v1.5.0.py
+python launch_v1.5.2.py
 ```
 服务默认监听 `http://127.0.0.1:5001`。
 
@@ -81,7 +81,7 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons
     --add-data "static/icons;static/icons" ^
     --add-data "static/js;static/js" ^
     --add-data "static/fontawesome-free;static/fontawesome-free" ^
-    launch_v1.5.0.py
+    launch_v1.5.2.py
 ```
 
 ---
