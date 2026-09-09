@@ -1,6 +1,6 @@
 <div align="center">
 
-# NetAssist 网工助手
+# NetAssist 网络运维工具
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1.2-green)

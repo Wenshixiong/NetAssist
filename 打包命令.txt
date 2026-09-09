@@ -18,10 +18,10 @@ cd /d D:\NetAssist
 命令行提示符前面会出现 (.venv)，例如：
 (.venv) D:\NetAssist>
 
-3、打包应用：
+3、打包应用：这里记得修改版本号
 
 // 带GUI界面打包方式
-pyinstaller --noconsole --onefile --name "NetAssist_v1.5.0" --icon="static/icons/NetAssist_64.ico" ^
+pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons/NetAssist_64.ico" ^
     --add-data "asset_info;asset_info" ^
     --add-data "html;html" ^
     --add-data "templates_uploads;templates_uploads" ^
@@ -31,9 +31,9 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.0" --icon="static/icons
     --add-data "static/icons;static/icons" ^
     --add-data "static/js;static/js" ^
     --add-data "static/fontawesome-free;static/fontawesome-free" ^
-    launch_v1.5.0.py
+    launch_v1.5.2.py
 
-4、退出虚拟环境
+4、（可选）退出虚拟环境
 在 cmd 中，直接输入：
 deactivate
 
