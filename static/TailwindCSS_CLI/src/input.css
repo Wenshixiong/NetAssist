@@ -1,0 +1,25 @@
+@tailwind base;  /*用于定义基础样式（如 <h1>、<p> 等标签的默认样式）。*/
+@tailwind components;  /*用于定义组件样式（如按钮、卡片等可复用的组合样式）。*/
+@tailwind utilities;  /*用于定义工具类（如.content-auto）。*/
+
+@layer utilities {
+  .content-auto {
+    content-visibility: auto; 
+    /* 浏览器自动优化内容可见性，提升渲染性能（常用于动态内容） */
+  }
+  .sidebar-active {
+    @apply bg-blue-50 text-blue-700 border-l-4 border-blue-500;
+    /* 侧边栏激活状态样式：
+    - 浅蓝色背景（bg-blue-50）
+    - 蓝色文本（text-blue-700）
+    - 左侧4px宽的蓝色边框（border-l-4 border-blue-500）
+    */
+  }
+  .nav-item-hover {
+    @apply hover:bg-gray-100 transition duration-200;
+    /* 导航项 hover 效果：
+    -  hover时背景变浅灰（hover:bg-gray-100）
+    - 过渡动画（transition），持续200ms（duration-200）
+    */
+  }
+}

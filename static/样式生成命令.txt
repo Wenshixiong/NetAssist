@@ -1,0 +1,14 @@
+cmd终端
+1、cd到该目录下（这里以D盘根目录为例）
+cd /d D:\NetAssist\static\TailwindCSS_CLI
+2、执行一下命令
+npx tailwindcss -i ./src/input.css -o ../css/output.css --watch
+3、完成样式生成后（Done），使用Ctrl+c  和 y 终止批处理操作
+
+
+
+tailwind.config.js
+配置theme主题色
+
+input.css
+配置自定义工具类

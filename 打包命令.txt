@@ -1,0 +1,48 @@
+# 使用当前选中的解释器安装
+python -m pip install xx
+
+======start
+
+1、打开 cmd（Win + R，输入 cmd，回车）。
+
+切换到你的项目目录：
+
+cd /d D:\NetAssist
+
+备注：/d 参数可以同时切换盘符（Z盘）。
+
+2、(可选）激活虚拟环境：
+.venv\Scripts\activate
+
+激活成功的标志
+命令行提示符前面会出现 (.venv)，例如：
+(.venv) D:\NetAssist>
+
+3、打包应用：
+
+// 带GUI界面打包方式
+pyinstaller --noconsole --onefile --name "NetAssist_v1.5.0" --icon="static/icons/NetAssist_64.ico" ^
+    --add-data "asset_info;asset_info" ^
+    --add-data "html;html" ^
+    --add-data "templates_uploads;templates_uploads" ^
+    --add-data "data_uploads;data_uploads" ^
+    --add-data "imported_mods;imported_mods" ^
+    --add-data "static/css;static/css" ^
+    --add-data "static/icons;static/icons" ^
+    --add-data "static/js;static/js" ^
+    --add-data "static/fontawesome-free;static/fontawesome-free" ^
+    launch_v1.5.0.py
+
+4、退出虚拟环境
+在 cmd 中，直接输入：
+deactivate
+
+
+=======end
+
+
+
+
+
+
+
