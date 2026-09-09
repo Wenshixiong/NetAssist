@@ -80,7 +80,7 @@ def run_netassist(q, port, env=None):
     sys.stderr = QueueWriter(q)
     try:
 
-        module_path = resource_path("NetAssist_v1.5.0.py")
+        module_path = resource_path("NetAssist_v1.5.2.py")
         module_spec = importlib.util.spec_from_file_location("NetAssist_app", module_path)
         if module_spec is None or module_spec.loader is None:
             raise ImportError(f"无法加载 NetAssist 模块: {module_path}")

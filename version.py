@@ -5,7 +5,7 @@ this value and all user-facing components import it from here.
 """
 
 APP_NAME = "NetAssist 网络运维工具"
-VERSION = "1.5.0"
+VERSION = "1.5.2"
 
 
 def version_text() -> str:
