@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 打包产物
+build/
+dist/
+*.spec
+*.exe
+
+# 运行时生成
+generated_scripts/
+*.log
+.resources_copied
+
+# Node（Tailwind 编译环境）
+static/TailwindCSS_CLI/node_modules/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

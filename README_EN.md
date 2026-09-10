@@ -115,6 +115,8 @@ python NetAssist_v1.5.2.py
 
 Listens on `0.0.0.0:5001` by default.
 
+> **Security Note**: The service listens on all network interfaces by default. For local-only use, restrict port 5001 via firewall. In production, always set the `FLASK_SECRET_KEY` environment variable (the default key is for development only).
+
 ### Cache Strategy
 
 | Strategy | Environment Variables | Description |
@@ -137,6 +139,9 @@ NetAssist/
 ├── requirements.txt         # Python dependencies
 ├── 打包命令.txt               # PyInstaller build command reference
 ├── LICENSE                  # Apache 2.0
+├── NOTICE                   # Third-party license notices
+├── CONTRIBUTING.md          # Contributing guide
+├── SECURITY.md              # Security policy & vulnerability reporting
 ├── RELEASE.md               # Release notes
 ├── html/                    # Jinja2 templates
 │   ├── base.html            # Layout skeleton (sidebar nav)
@@ -257,3 +262,5 @@ python bump_version.py --set 2.1.0  # Explicit set
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE), Copyright © 2026 Wenshixiong/NetAssist.
+
+Third-party component licenses (Font Awesome, ECharts, Cytoscape.js, Flask, etc.) are documented in [NOTICE](NOTICE).

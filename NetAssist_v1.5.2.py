@@ -3,6 +3,7 @@ import os
 import sys
 import psutil
 from flask import Flask, render_template, redirect, url_for, request, flash, send_file, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
 from io import BytesIO
 import re
 from datetime import datetime
@@ -118,7 +119,27 @@ app.jinja_loader.searchpath.append(topology_template_dir)
 app.jinja_loader.searchpath.append(work_template_dir)
 
 # 配置Flask应用的密钥，用于完成会话管理、密码哈希签名等安全相关操作
-app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_should_be_changed')
+_default_secret_key = 'dev_secret_key_should_be_changed'
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', _default_secret_key)
+if app.config['SECRET_KEY'] == _default_secret_key:
+    print("[Warning] FLASK_SECRET_KEY 环境变量未设置，当前使用默认开发密钥。生产环境请务必设置 FLASK_SECRET_KEY 以保障会话安全。")
+
+# 限制上传文件最大 50MB，防止大文件 DoS
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
+def safe_upload_filename(filename):
+    """安全处理上传文件名，防止路径穿越，兼容中文文件名。
+    优先使用 werkzeug.secure_filename；若结果为空（如纯中文），则回退到basename + 字符过滤。
+    """
+    if not filename:
+        return 'uploaded_file'
+    cleaned = secure_filename(filename)
+    if cleaned:
+        return cleaned
+    # 回退：去掉路径部分，移除路径分隔符和穿越字符
+    cleaned = os.path.basename(filename)
+    cleaned = cleaned.replace('..', '').replace('/', '').replace('\\', '').replace('\x00', '')
+    return cleaned if cleaned else 'uploaded_file'
 
 # 使中文正常渲染
 app.config['JSON_AS_ASCII'] = False
@@ -2341,7 +2362,7 @@ def upload_asset_info():
             flash('有文件未选择名称', 'error')
             continue
         if file and allowed_file(file.filename, app.config['ALLOWED_ASSET_INFO_EXTENSIONS']):
-            filename = file.filename
+            filename = safe_upload_filename(file.filename)
             base, ext = os.path.splitext(filename)
             counter = 1
             save_path = app.config['ASSET_INFO_FOLDER']
@@ -2417,7 +2438,7 @@ def upload_custom_line():
             flash('有文件未选择名称', 'error')
             continue
         if file and allowed_file(file.filename, app.config['ALLOWED_CUSTOM_LINE_EXTENSIONS']):
-            filename = file.filename
+            filename = safe_upload_filename(file.filename)
             base, ext = os.path.splitext(filename)
             counter = 1
             save_path = app.config['CUSTOM_LINE_FOLDER']
@@ -2615,7 +2636,7 @@ def upload_template():
             continue
             
         if file and allowed_file(file.filename, app.config['ALLOWED_TEMPLATE_EXTENSIONS']):
-            filename = file.filename
+            filename = safe_upload_filename(file.filename)
             # 处理同名文件
             base, ext = os.path.splitext(filename)
             counter = 1
@@ -2642,7 +2663,7 @@ def upload_datasource():
             continue
             
         if file and allowed_file(file.filename, app.config['ALLOWED_DATA_EXTENSIONS']):
-            filename = file.filename
+            filename = safe_upload_filename(file.filename)
             # 处理同名文件
             base, ext = os.path.splitext(filename)
             counter = 1

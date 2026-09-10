@@ -1,0 +1,103 @@
+================================================================================
+中文说明
+================================================================================
+
+NetAssist 网络运维工具
+版权所有 © 2026 Wenshixiong/NetAssist
+
+本项目包含以下开源软件，其各自许可证声明如下：
+
+--------------------------------------------------------------------------------
+Apache License 2.0
+--------------------------------------------------------------------------------
+本项目基于 Apache License 2.0 开源，完整许可证文本见同目录 LICENSE 文件。
+
+--------------------------------------------------------------------------------
+Font Awesome Free（图标与字体）
+--------------------------------------------------------------------------------
+Font Awesome Free 采用以下三重许可证：
+- 图标（Icons）：CC BY 4.0
+- 字体（Fonts）：SIL OFL 1.1
+- 代码（Code）：MIT License
+
+版本：7.1.0
+来源：https://fontawesome.com/
+本地路径：static/fontawesome-free/
+署名要求："Font Awesome by Dave Gandy - https://fontawesome.com"
+
+--------------------------------------------------------------------------------
+Python 第三方依赖
+--------------------------------------------------------------------------------
+本项目使用以下开源 Python 库（详见 requirements.txt）：
+- Flask（BSD-3-Clause）
+- waitress（ZPL 2.1）
+- pandas（BSD-3-Clause）
+- openpyxl（MIT）
+- python-dateutil（Apache 2.0 / BSD）
+- psutil（BSD-3-Clause）
+- Pillow（HPND）
+- pystray（LGPL-3.0）
+
+这些库通过 pip install 安装，其许可证随安装包一并提供，无需额外申请或购买。
+
+--------------------------------------------------------------------------------
+JavaScript 第三方库
+--------------------------------------------------------------------------------
+- Tailwind CSS（MIT）
+- ECharts（Apache 2.0）
+- Cytoscape.js（MIT）
+- diff.js（BSD-3-Clause）
+- html-to-image（MIT）
+
+================================================================================
+English
+================================================================================
+
+NetAssist Network Operations Tool
+Copyright © 2026 Wenshixiong/NetAssist
+
+This product includes software developed under the following licenses:
+
+--------------------------------------------------------------------------------
+Apache License 2.0
+--------------------------------------------------------------------------------
+This project is licensed under the Apache License, Version 2.0.
+See the LICENSE file in the same directory for full text.
+
+--------------------------------------------------------------------------------
+Font Awesome Free (icons and webfonts)
+--------------------------------------------------------------------------------
+Font Awesome Free is distributed under a tri-license:
+- Icons: CC BY 4.0
+- Fonts: SIL OFL 1.1
+- Code: MIT License
+
+Version: 7.1.0
+Source: https://fontawesome.com/
+Local path: static/fontawesome-free/
+Attribution: "Font Awesome by Dave Gandy - https://fontawesome.com"
+
+--------------------------------------------------------------------------------
+Third-party Python dependencies
+--------------------------------------------------------------------------------
+This project uses the following open-source Python libraries (see requirements.txt):
+- Flask (BSD-3-Clause)
+- waitress (ZPL 2.1)
+- pandas (BSD-3-Clause)
+- openpyxl (MIT)
+- python-dateutil (Apache 2.0 / BSD)
+- psutil (BSD-3-Clause)
+- Pillow (HPND)
+- pystray (LGPL-3.0)
+
+These libraries are installed via pip and their licenses are included with each
+package. No additional purchase or application is required.
+
+--------------------------------------------------------------------------------
+Third-party JavaScript libraries
+--------------------------------------------------------------------------------
+- Tailwind CSS (MIT)
+- ECharts (Apache 2.0)
+- Cytoscape.js (MIT)
+- diff.js (BSD-3-Clause)
+- html-to-image (MIT)

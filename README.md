@@ -115,6 +115,8 @@ python NetAssist_v1.5.2.py
 
 服务默认监听 `0.0.0.0:5001`。
 
+> **安全提示**：服务默认监听所有网卡。仅本地使用时，建议通过防火墙限制 5001 端口的外部访问；生产环境务必设置环境变量 `FLASK_SECRET_KEY`（默认密钥仅用于开发）。
+
 ### 缓存策略
 
 | 策略 | 环境变量 | 说明 |
@@ -137,6 +139,9 @@ NetAssist/
 ├── requirements.txt         # 依赖清单
 ├── 打包命令.txt               # PyInstaller 打包命令参考
 ├── LICENSE                  # Apache 2.0
+├── NOTICE                   # 第三方组件许可证声明
+├── CONTRIBUTING.md          # 贡献指南
+├── SECURITY.md              # 安全策略与漏洞上报
 ├── RELEASE.md               # 版本发布说明
 ├── html/                    # Jinja2 模板
 │   ├── base.html            # 布局骨架（侧边导航）
@@ -257,3 +262,5 @@ python bump_version.py --set 2.1.0  # 显式设置
 ## 许可证
 
 本项目基于 [Apache License 2.0](LICENSE) 开源，Copyright © 2026 Wenshixiong/NetAssist。
+
+第三方组件（Font Awesome、ECharts、Cytoscape.js、Flask 等）的许可证声明详见 [NOTICE](NOTICE)。
