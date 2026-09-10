@@ -110,7 +110,7 @@ A graphical manager opens for port configuration, cache strategy selection, and 
 **Option 2: Direct Web Server**
 
 ```bash
-python NetAssist_v1.5.2.py
+python NetAssist.py
 ```
 
 Listens on `0.0.0.0:5001` by default.
@@ -132,8 +132,8 @@ Use the `/refresh_cache` endpoint to refresh a specific cache key on demand.
 
 ```
 NetAssist/
-├── NetAssist_v1.5.2.py      # Flask main application
-├── launch_v1.5.2.py         # tkinter GUI launcher + system tray
+├── NetAssist.py             # Flask main application (fixed name, no version suffix)
+├── launch_v1.5.2.py         # tkinter GUI launcher + system tray (renamed per version)
 ├── version.py               # Version metadata (single source of truth)
 ├── bump_version.py          # Version bump helper
 ├── requirements.txt         # Python dependencies
@@ -235,18 +235,24 @@ On first launch, `ensure_resources_once()` copies sample Excel files and templat
 ## Development
 
 ### Version Management
-`version.py` is the single source of truth. Use `bump_version.py` to increment and auto-rename the main and launcher files:
+`version.py` is the single source of truth. Running `bump_version.py` syncs:
+
+1. `VERSION` in `version.py` — the GUI window title and the in-app About page follow it automatically
+2. The launcher filename `launch_v1.5.2.py` → new version
+3. Version references in `打包命令.txt`, `README.md`, `README_EN.md`, `RELEASE.md` and `CONTRIBUTING.md`
+
+The main application is fixed as `NetAssist.py` (no version suffix), so it is never renamed.
 
 ```bash
-python bump_version.py              # 1.5.2 -> 1.5.3 (patch)
-python bump_version.py --minor      # 1.5.3 -> 1.6.0
-python bump_version.py --major      # 1.6.0 -> 2.0.0
+python bump_version.py              # patch: X.Y.Z -> X.Y.(Z+1)
+python bump_version.py --minor      # minor: X.Y.Z -> X.(Y+1).0
+python bump_version.py --major      # major: X.Y.Z -> (X+1).0.0
 python bump_version.py --set 2.1.0  # Explicit set
 ```
 
 ### Adding a Script Generation Scenario
 1. Create a module in `imported_mods/` exposing `main(EXCEL_NAME, SHEET_NAME, OUTPUT_DIR, ROLLBACK_DIR, ...)`
-2. Load it dynamically in `NetAssist_v1.5.2.py` via `load_module_from_path()`
+2. Load it dynamically in `NetAssist.py` via `load_module_from_path()`
 3. Dispatch by data-source filename keyword in the `/generate_scripts` route
 
 ### Environment Variables

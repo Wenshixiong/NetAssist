@@ -110,7 +110,7 @@ python launch_v1.5.2.py
 **方式二：直接启动 Web 服务**
 
 ```bash
-python NetAssist_v1.5.2.py
+python NetAssist.py
 ```
 
 服务默认监听 `0.0.0.0:5001`。
@@ -132,8 +132,8 @@ python NetAssist_v1.5.2.py
 
 ```
 NetAssist/
-├── NetAssist_v1.5.2.py      # Flask 主应用
-├── launch_v1.5.2.py         # tkinter GUI 启动器 + 系统托盘
+├── NetAssist.py             # Flask 主应用（固定文件名，不含版本号）
+├── launch_v1.5.2.py         # tkinter GUI 启动器 + 系统托盘（随版本重命名）
 ├── version.py               # 版本元数据（唯一版本来源）
 ├── bump_version.py          # 版本递增工具
 ├── requirements.txt         # 依赖清单
@@ -235,18 +235,24 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons
 ## 开发说明
 
 ### 版本管理
-版本号唯一来源为 `version.py`，使用 `bump_version.py` 统一递增并自动重命名主程序与启动器：
+版本号唯一来源为 `version.py`，使用 `bump_version.py` 统一递增。执行一次会同步更新：
+
+1. `version.py` 的 `VERSION`（GUI 窗口标题、网页「关于」页面均由此自动跟随）
+2. 启动器文件名 `launch_v1.5.2.py` → 新版本
+3. `打包命令.txt`、`README.md`、`README_EN.md`、`RELEASE.md`、`CONTRIBUTING.md` 中的版本号引用
+
+主应用固定为 `NetAssist.py`，不含版本号，因此不会被重命名。
 
 ```bash
-python bump_version.py              # 1.5.2 -> 1.5.3（patch）
-python bump_version.py --minor      # 1.5.3 -> 1.6.0
-python bump_version.py --major      # 1.6.0 -> 2.0.0
+python bump_version.py              # patch：X.Y.Z -> X.Y.(Z+1)
+python bump_version.py --minor      # minor：X.Y.Z -> X.(Y+1).0
+python bump_version.py --major      # major：X.Y.Z -> (X+1).0.0
 python bump_version.py --set 2.1.0  # 显式设置
 ```
 
 ### 新增脚本生成场景
 1. 在 `imported_mods/` 中新增模块，暴露 `main(EXCEL_NAME, SHEET_NAME, OUTPUT_DIR, ROLLBACK_DIR, ...)` 入口
-2. 在 `NetAssist_v1.5.2.py` 中通过 `load_module_from_path()` 动态加载
+2. 在 `NetAssist.py` 中通过 `load_module_from_path()` 动态加载
 3. 在 `/generate_scripts` 路由中按数据源文件名关键字分发
 
 ### 环境变量

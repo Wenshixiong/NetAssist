@@ -18,7 +18,6 @@ import pystray
 import ctypes
 import re
 import webbrowser
-import importlib.util
 from version import APP_NAME, version_text
 
 # ---------- 资源路径 ----------
@@ -80,12 +79,9 @@ def run_netassist(q, port, env=None):
     sys.stderr = QueueWriter(q)
     try:
 
-        module_path = resource_path("NetAssist_v1.5.2.py")
-        module_spec = importlib.util.spec_from_file_location("NetAssist_app", module_path)
-        if module_spec is None or module_spec.loader is None:
-            raise ImportError(f"无法加载 NetAssist 模块: {module_path}")
-        NetAssist_app = importlib.util.module_from_spec(module_spec)
-        module_spec.loader.exec_module(NetAssist_app)
+        # 以模块方式引入主应用（NetAssist.py 已固定文件名，不含版本号）
+        # 放在函数内延迟加载：仅子进程序需要加载 Flask/pandas 等重型依赖，GUI 主窗口启动不受影响
+        import NetAssist as NetAssist_app
         # 先执行缓存初始化（会输出日志到 QueueWriter）
         NetAssist_app.initialize_cache()
         # 再启动 Web 服务器
