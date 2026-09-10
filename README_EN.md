@@ -15,6 +15,12 @@
 
 </div>
 
+## Screenshots
+
+| GUI Launcher | Home |
+|---|---|
+| ![GUI Launcher](screenshots/GUI.png) | ![Home](screenshots/home.png) |
+
 ---
 
 ## Features
@@ -27,12 +33,18 @@ Automatically aggregates and visualizes data from the device maintenance Excel:
 - **Interactive Filtering**: Cross-filter by model and business zone
 - Auto-excludes decommissioned devices (red-highlighted rows) and line-card models (CE- / CEL / CR prefixes)
 
+![Information Charts - Maintenance & Distribution](screenshots/info1.png)
+![Information Charts - EOS & Filtering](screenshots/info2.png)
+
 ### Network Topology
 Renders LLDP-derived device interconnection data with Cytoscape.js:
 - **Global Topology**: Full architecture view with drag, zoom, and hover tooltips (model / IP / serial / MAC / vendor / zone)
 - **Zone Topology**: Per-business-zone view with auto-filtered devices and links
 - **Coordinate Persistence**: Dragged node positions are written back to Excel and restored on next launch
 - Export topology as PNG
+
+![Global Topology](screenshots/topology1.png)
+![Zone Topology](screenshots/topology2.png)
 
 ### Batch Script Generation
 Plugin-based architecture that generates **change scripts + rollback scripts** from Excel data. Five built-in scenarios:
@@ -48,9 +60,15 @@ Plugin-based architecture that generates **change scripts + rollback scripts** f
 - Upload / download / preview / delete template files, data source Excel, device name mapping tables, and custom line files
 - Generated scripts available as individual downloads or full ZIP archive
 
+![Batch Script Generation - File Manager](screenshots/script1.png)
+![Batch Script Generation - Scenario](screenshots/script2.png)
+
 ### Sorted Text Diff
 - Sorts two text inputs independently and compares differences (diff.js)
 - Quickly spot discrepancies between config files or command outputs
+
+![Sorted Text Diff](screenshots/compare1.png)
+![Sorted Text Diff - Highlighted](screenshots/compare2.png)
 
 ---
 
