@@ -18,7 +18,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # 4. 启动开发服务
-python launch_v1.5.2.py
+python launch_v1.5.3.py
 ```
 
 访问 `http://127.0.0.1:5001` 即可。

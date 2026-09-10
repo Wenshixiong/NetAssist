@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1.2-green)
 ![License](https://img.shields.io/badge/License-Apache%202.0-orange)
-![Version](https://img.shields.io/badge/Version-v1.5.2-brightgreen)
+![Version](https://img.shields.io/badge/Version-v1.5.3-brightgreen)
 
 **面向网络工程师的本地运维工具箱：设备资产统计可视化、LLDP 自动拓扑、多场景批量脚本生成、文本对比。**
 
@@ -102,7 +102,7 @@ pip install -r requirements.txt
 **方式一：GUI 启动器（推荐）**
 
 ```bash
-python launch_v1.5.2.py
+python launch_v1.5.3.py
 ```
 
 弹出图形化管理器，可配置端口、选择缓存策略、查看运行日志，支持系统托盘最小化。点击「启动服务」后访问 `http://127.0.0.1:5001`。
@@ -133,7 +133,7 @@ python NetAssist.py
 ```
 NetAssist/
 ├── NetAssist.py             # Flask 主应用（固定文件名，不含版本号）
-├── launch_v1.5.2.py         # tkinter GUI 启动器 + 系统托盘（随版本重命名）
+├── launch_v1.5.3.py         # tkinter GUI 启动器 + 系统托盘（随版本重命名）
 ├── version.py               # 版本元数据（唯一版本来源）
 ├── bump_version.py          # 版本递增工具
 ├── requirements.txt         # 依赖清单
@@ -215,7 +215,7 @@ npx tailwindcss -i ./src/input.css -o ../css/output.css --watch
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons/NetAssist_64.ico" ^
+pyinstaller --noconsole --onefile --name "NetAssist_v1.5.3" --icon="static/icons/NetAssist_64.ico" ^
     --add-data "asset_info;asset_info" ^
     --add-data "html;html" ^
     --add-data "templates_uploads;templates_uploads" ^
@@ -225,7 +225,7 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons
     --add-data "static/icons;static/icons" ^
     --add-data "static/js;static/js" ^
     --add-data "static/fontawesome-free;static/fontawesome-free" ^
-    launch_v1.5.2.py
+    launch_v1.5.3.py
 ```
 
 首次启动 exe 时，`ensure_resources_once()` 会自动将示例 Excel、模板等从 exe 内部复制到 exe 所在目录。
@@ -238,7 +238,7 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons
 版本号唯一来源为 `version.py`，使用 `bump_version.py` 统一递增。执行一次会同步更新：
 
 1. `version.py` 的 `VERSION`（GUI 窗口标题、网页「关于」页面均由此自动跟随）
-2. 启动器文件名 `launch_v1.5.2.py` → 新版本
+2. 启动器文件名 `launch_v1.5.3.py` → 新版本
 3. `打包命令.txt`、`README.md`、`README_EN.md`、`RELEASE.md`、`CONTRIBUTING.md` 中的版本号引用
 
 主应用固定为 `NetAssist.py`，不含版本号，因此不会被重命名。

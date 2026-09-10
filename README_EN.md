@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Flask](https://img.shields.io/badge/Flask-3.1.2-green)
 ![License](https://img.shields.io/badge/License-Apache%202.0-orange)
-![Version](https://img.shields.io/badge/Version-v1.5.2-brightgreen)
+![Version](https://img.shields.io/badge/Version-v1.5.3-brightgreen)
 
 **A local operations toolkit for network engineers: device asset analytics, LLDP-based auto topology, multi-scenario batch script generation, and text diff.**
 
@@ -102,7 +102,7 @@ pip install -r requirements.txt
 **Option 1: GUI Launcher (recommended)**
 
 ```bash
-python launch_v1.5.2.py
+python launch_v1.5.3.py
 ```
 
 A graphical manager opens for port configuration, cache strategy selection, and log viewing, with system tray minimization. Click "Start Service" then visit `http://127.0.0.1:5001`.
@@ -133,7 +133,7 @@ Use the `/refresh_cache` endpoint to refresh a specific cache key on demand.
 ```
 NetAssist/
 ├── NetAssist.py             # Flask main application (fixed name, no version suffix)
-├── launch_v1.5.2.py         # tkinter GUI launcher + system tray (renamed per version)
+├── launch_v1.5.3.py         # tkinter GUI launcher + system tray (renamed per version)
 ├── version.py               # Version metadata (single source of truth)
 ├── bump_version.py          # Version bump helper
 ├── requirements.txt         # Python dependencies
@@ -215,7 +215,7 @@ npx tailwindcss -i ./src/input.css -o ../css/output.css --watch
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons/NetAssist_64.ico" ^
+pyinstaller --noconsole --onefile --name "NetAssist_v1.5.3" --icon="static/icons/NetAssist_64.ico" ^
     --add-data "asset_info;asset_info" ^
     --add-data "html;html" ^
     --add-data "templates_uploads;templates_uploads" ^
@@ -225,7 +225,7 @@ pyinstaller --noconsole --onefile --name "NetAssist_v1.5.2" --icon="static/icons
     --add-data "static/icons;static/icons" ^
     --add-data "static/js;static/js" ^
     --add-data "static/fontawesome-free;static/fontawesome-free" ^
-    launch_v1.5.2.py
+    launch_v1.5.3.py
 ```
 
 On first launch, `ensure_resources_once()` copies sample Excel files and templates from inside the exe to the exe's directory.
@@ -238,7 +238,7 @@ On first launch, `ensure_resources_once()` copies sample Excel files and templat
 `version.py` is the single source of truth. Running `bump_version.py` syncs:
 
 1. `VERSION` in `version.py` — the GUI window title and the in-app About page follow it automatically
-2. The launcher filename `launch_v1.5.2.py` → new version
+2. The launcher filename `launch_v1.5.3.py` → new version
 3. Version references in `打包命令.txt`, `README.md`, `README_EN.md`, `RELEASE.md` and `CONTRIBUTING.md`
 
 The main application is fixed as `NetAssist.py` (no version suffix), so it is never renamed.
