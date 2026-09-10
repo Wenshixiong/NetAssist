@@ -30,3 +30,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+#AI工具
+.workbuddy
